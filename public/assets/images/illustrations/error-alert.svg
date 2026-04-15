@@ -1,0 +1,14 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer Circle -->
+  <circle cx="100" cy="100" r="90" stroke="#EF4444" stroke-width="2" opacity="0.2" fill="#EF4444" fill-opacity="0.05"/>
+  
+  <!-- Inner Circle -->
+  <circle cx="100" cy="100" r="75" fill="#EF4444" opacity="0.1"/>
+  
+  <!-- Triangle -->
+  <path d="M 100 60 L 140 140 L 60 140 Z" stroke="#EF4444" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+  
+  <!-- Exclamation -->
+  <line x1="100" y1="85" x2="100" y2="115" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="100" cy="128" r="2.5" fill="#EF4444"/>
+</svg>

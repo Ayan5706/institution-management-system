@@ -1,0 +1,23 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="32" cy="32" r="30" fill="#EF9A5D" opacity="0.1"/>
+  <circle cx="32" cy="32" r="31" stroke="#EF9A5D" stroke-width="1" opacity="0.3"/>
+  
+  <!-- Head -->
+  <circle cx="32" cy="18" r="8" fill="#EF9A5D"/>
+  
+  <!-- Body (Graduation Robe) -->
+  <path d="M 20 30 L 24 26 L 32 28 L 40 26 L 44 30 Q 44 35 32 38 Q 20 35 20 30" fill="#EF9A5D"/>
+  
+  <!-- Arms -->
+  <path d="M 20 30 Q 15 32 12 40" stroke="#EF9A5D" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M 44 30 Q 49 32 52 40" stroke="#EF9A5D" stroke-width="3" fill="none" stroke-linecap="round"/>
+  
+  <!-- Legs -->
+  <line x1="28" y1="38" x2="26" y2="50" stroke="#EF9A5D" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="36" y1="38" x2="38" y2="50" stroke="#EF9A5D" stroke-width="2.5" stroke-linecap="round"/>
+  
+  <!-- Cap -->
+  <rect x="24" y="12" width="16" height="3" fill="#663300" rx="1"/>
+  <polygon points="32,11 26,12 38,12" fill="#663300"/>
+</svg>

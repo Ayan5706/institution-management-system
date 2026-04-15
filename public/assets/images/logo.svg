@@ -1,0 +1,28 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="32" cy="32" r="30" fill="url(#gradient)" opacity="0.1"/>
+  
+  <!-- Main Letter I -->
+  <rect x="28" y="12" width="8" height="40" fill="#4A90E2" rx="2"/>
+  
+  <!-- Top Bar (M shape) -->
+  <path d="M 12 28 L 18 12 L 24 24 L 30 12 L 36 28" stroke="#4A90E2" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Bottom Building Shape -->
+  <g>
+    <rect x="40" y="28" width="6" height="16" fill="#6BA3F5" rx="1"/>
+    <rect x="48" y="24" width="6" height="20" fill="#6BA3F5" rx="1"/>
+    <rect x="56" y="32" width="6" height="12" fill="#6BA3F5" rx="1"/>
+  </g>
+  
+  <!-- Accent Line -->
+  <line x1="12" y1="50" x2="52" y2="50" stroke="#4A90E2" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Gradient Definition -->
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4A90E2;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6BA3F5;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+</svg>

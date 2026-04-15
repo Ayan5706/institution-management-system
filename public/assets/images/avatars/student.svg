@@ -1,0 +1,22 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="32" cy="32" r="30" fill="#6BA3F5" opacity="0.1"/>
+  <circle cx="32" cy="32" r="31" stroke="#6BA3F5" stroke-width="1" opacity="0.3"/>
+  
+  <!-- Head -->
+  <circle cx="32" cy="18" r="8" fill="#6BA3F5"/>
+  
+  <!-- Body -->
+  <path d="M 22 28 Q 22 26 32 26 Q 42 26 42 28 L 40 42 Q 40 44 32 44 Q 24 44 24 42 Z" fill="#6BA3F5"/>
+  
+  <!-- Arms -->
+  <path d="M 22 30 L 14 36" stroke="#6BA3F5" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M 42 30 L 50 36" stroke="#6BA3F5" stroke-width="3" fill="none" stroke-linecap="round"/>
+  
+  <!-- Legs -->
+  <line x1="28" y1="44" x2="26" y2="54" stroke="#6BA3F5" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="36" y1="44" x2="38" y2="54" stroke="#6BA3F5" stroke-width="2.5" stroke-linecap="round"/>
+  
+  <!-- Backpack Strap -->
+  <circle cx="32" cy="42" r="4" stroke="#6BA3F5" stroke-width="2" fill="none"/>
+</svg>

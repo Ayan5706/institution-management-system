@@ -1,0 +1,26 @@
+<Files ^.*>
+    Deny from all
+</Files>
+
+<FilesMatch "\.(jpg|jpeg|png|gif|webp|pdf|doc|docx|xls|xlsx)$">
+    Allow from all
+</FilesMatch>
+
+# Disable script execution
+AddType text/plain .php .phtml .php3 .php4 .php5 .php6 .php7 .phps .pht .phar .phpt .pgif .shtml .htaccess .phtml5 .pht .phps .phar .php3 .php4 .php5 .php6 .php7 .phps
+
+# Cache headers
+<FilesMatch "\.(jpg|jpeg|png|gif|webp)$">
+    Header set Cache-Control "max-age=31536000, public"
+</FilesMatch>
+
+<FilesMatch "\.(pdf|doc|docx|xls|xlsx)$">
+    Header set Cache-Control "max-age=604800, public"
+</FilesMatch>
+
+# MIME types
+AddType image/jpeg .jpg .jpeg
+AddType image/png .png
+AddType image/gif .gif
+AddType image/webp .webp
+AddType application/pdf .pdf

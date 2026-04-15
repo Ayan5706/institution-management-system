@@ -1,0 +1,127 @@
+<?php
+
+namespace App\Seeders;
+
+class UsersTableSeeder extends Seeder
+{
+    public function run(): void
+    {
+        echo "Seeding users table...\n";
+
+        $users = [
+            [
+                'role' => 'PRINCIPAL',
+                'login_id' => 'admin',
+                'password_hash' => password_hash('password123', PASSWORD_BCRYPT),
+                'full_name' => 'Admin User',
+                'email' => 'admin@imsschool.local',
+                'phone' => '555-0001',
+                'is_active' => 1,
+                'must_change_password' => 0,
+                'created_at' => date('Y-m-d H:i:s'),
+            ],
+            [
+                'role' => 'PRINCIPAL',
+                'login_id' => 'principal.wilson',
+                'password_hash' => password_hash('password123', PASSWORD_BCRYPT),
+                'full_name' => 'Principal Wilson',
+                'email' => 'wilson@imsschool.local',
+                'phone' => '555-0002',
+                'is_active' => 1,
+                'must_change_password' => 0,
+                'created_at' => date('Y-m-d H:i:s'),
+            ],
+            [
+                'role' => 'TEACHER',
+                'login_id' => 'dr.johnson',
+                'password_hash' => password_hash('password123', PASSWORD_BCRYPT),
+                'full_name' => 'Dr. Sarah Johnson',
+                'email' => 'sjohnson@imsschool.local',
+                'phone' => '555-0003',
+                'is_active' => 1,
+                'must_change_password' => 0,
+                'created_at' => date('Y-m-d H:i:s'),
+            ],
+            [
+                'role' => 'TEACHER',
+                'login_id' => 'mr.smith',
+                'password_hash' => password_hash('password123', PASSWORD_BCRYPT),
+                'full_name' => 'Mr. James Smith',
+                'email' => 'jsmith@imsschool.local',
+                'phone' => '555-0004',
+                'is_active' => 1,
+                'must_change_password' => 0,
+                'created_at' => date('Y-m-d H:i:s'),
+            ],
+            [
+                'role' => 'TEACHER',
+                'login_id' => 'ms.davis',
+                'password_hash' => password_hash('password123', PASSWORD_BCRYPT),
+                'full_name' => 'Ms. Emily Davis',
+                'email' => 'edavis@imsschool.local',
+                'phone' => '555-0005',
+                'is_active' => 1,
+                'must_change_password' => 0,
+                'created_at' => date('Y-m-d H:i:s'),
+            ],
+            [
+                'role' => 'STUDENT',
+                'login_id' => 'janderson',
+                'password_hash' => password_hash('password123', PASSWORD_BCRYPT),
+                'full_name' => 'John Michael Anderson',
+                'email' => 'janderson@imsschool.local',
+                'phone' => '555-0100',
+                'is_active' => 1,
+                'must_change_password' => 0,
+                'created_at' => date('Y-m-d H:i:s'),
+            ],
+            [
+                'role' => 'STUDENT',
+                'login_id' => 'sbrown',
+                'password_hash' => password_hash('password123', PASSWORD_BCRYPT),
+                'full_name' => 'Sarah Michelle Brown',
+                'email' => 'sbrown@imsschool.local',
+                'phone' => '555-0101',
+                'is_active' => 1,
+                'must_change_password' => 0,
+                'created_at' => date('Y-m-d H:i:s'),
+            ],
+            [
+                'role' => 'STUDENT',
+                'login_id' => 'mharris',
+                'password_hash' => password_hash('password123', PASSWORD_BCRYPT),
+                'full_name' => 'Michael Robert Harris',
+                'email' => 'mharris@imsschool.local',
+                'phone' => '555-0102',
+                'is_active' => 1,
+                'must_change_password' => 0,
+                'created_at' => date('Y-m-d H:i:s'),
+            ],
+            [
+                'role' => 'STUDENT',
+                'login_id' => 'ltaylor',
+                'password_hash' => password_hash('password123', PASSWORD_BCRYPT),
+                'full_name' => 'Lisa Marie Taylor',
+                'email' => 'ltaylor@imsschool.local',
+                'phone' => '555-0103',
+                'is_active' => 1,
+                'must_change_password' => 0,
+                'created_at' => date('Y-m-d H:i:s'),
+            ],
+            [
+                'role' => 'STUDENT',
+                'login_id' => 'dmiller',
+                'password_hash' => password_hash('password123', PASSWORD_BCRYPT),
+                'full_name' => 'David James Miller',
+                'email' => 'dmiller@imsschool.local',
+                'phone' => '555-0104',
+                'is_active' => 1,
+                'must_change_password' => 0,
+                'created_at' => date('Y-m-d H:i:s'),
+            ],
+        ];
+
+        $this->insertMany('users', $users);
+        echo "Seeded " . count($users) . " users.\n";
+    }
+}

@@ -1,0 +1,25 @@
+# Storage Directory - .gitignore
+# All runtime and temporary files
+
+# Logs directory
+logs/
+
+# Cache files
+cache/
+
+# Session files (PHP session storage)
+sessions/
+
+# Temporary files
+temp/
+
+# Backups
+backups/
+
+# Exports
+exports/
+
+# Rule: Ignore all files in storage/ except for documentation and configuration
+*
+!.gitignore
+!README.md

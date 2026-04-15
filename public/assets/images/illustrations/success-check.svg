@@ -1,0 +1,10 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer Circle -->
+  <circle cx="100" cy="100" r="90" stroke="#10B981" stroke-width="2" opacity="0.2" fill="#10B981" fill-opacity="0.05"/>
+  
+  <!-- Inner Circle -->
+  <circle cx="100" cy="100" r="75" fill="#10B981" opacity="0.1"/>
+  
+  <!-- Checkmark -->
+  <path d="M 70 100 L 88 118 L 135 65" stroke="#10B981" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

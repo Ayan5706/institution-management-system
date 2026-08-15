@@ -138,9 +138,9 @@ $profile_not_found = $profile_not_found ?? false;
                 <thead>
                     <tr>
                         <th>Semester</th>
-                        <th style="text-align: right;">Fee Amount</th>
+                        <th style="text-align: right;">Total Amount</th>
                         <th style="text-align: right;">Amount Paid</th>
-                        <th style="text-align: right;">Pending</th>
+                        <th style="text-align: right;">Balance</th>
                         <th style="text-align: center;">Status</th>
                     </tr>
                 </thead>

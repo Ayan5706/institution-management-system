@@ -1,242 +1,176 @@
-    <style>
+<?php
+/** @var array $stats */
+/** @var array $assignments */
+/** @var string $user_name */
+$activeNav = 'dashboard';
+$stats = $stats ?? [];
+$assignments = $assignments ?? [];
+?>
+<?php ob_start(); ?>
+<style>
+    .schedule-table td {
+        vertical-align: middle;
+    }
+
+    .schedule-time {
+        font-weight: 700;
+        color: #2f7f87;
+        font-size: 1.05rem;
+    }
+
+    .schedule-code {
+        background: rgba(47, 127, 135, 0.12);
+        color: #2f5861;
+        padding: 4px 8px;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .schedule-name {
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .schedule-meta {
+        color: #64748b;
+        font-size: 0.9rem;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .schedule-action {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    @media (max-width: 640px) {
+        .schedule-action {
+            justify-content: flex-start;
+        }
+    }
+</style>
+<div class="card content-card">
+    <div class="toolbar">
+        <div>
+            <h2 style="margin:0 0 6px;">Teacher Dashboard</h2>
+            <div style="color:#6c7b86;">Your classes and attendance for today</div>
+        </div>
     </div>
 
-    <style>
-        .dashboard-grid {
-            color: #1f2a37;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            margin-bottom: 24px;
-        }
-
-        .dashboard-column {
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-        }
-
-        .section-title {
-            margin: 0 0 14px;
-            font-size: 1.05rem;
-            font-weight: 700;
-            color: #0f172a;
-        }
-
-        .schedule-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 16px;
-        }
-
-        .schedule-card {
-            padding: 16px;
-            border-radius: 14px;
-            background: #ffffff;
-            border: 1px solid #d6e0e6;
-            display: flex;
-            flex-direction: column;
-            transition: all 0.2s;
-        }
-
-        .schedule-card:hover {
-            border-color: rgba(47, 127, 135, 0.4);
-            box-shadow: 0 8px 18px rgba(31, 42, 55, 0.12);
-        }
-
-        .schedule-card.disabled {
-            opacity: 0.65;
-            background: #f4f7f9;
-        }
-
-        .schedule-card.disabled:hover {
-            border-color: #d6e0e6;
-            box-shadow: none;
-        }
-
-        .subject-code {
-            font-size: 0.8rem;
-            color: #6c7b86;
-            margin-bottom: 4px;
-            font-weight: 600;
-        }
-
-        .subject-name {
-            font-weight: 700;
-            color: #1f2a37;
-            font-size: 1rem;
-            margin-bottom: 8px;
-        }
-
-        .class-info {
-            font-size: 0.85rem;
-            color: #6c7b86;
-            margin-bottom: 8px;
-            line-height: 1.4;
-        }
-
-        .time-slot {
-            font-size: 0.9rem;
-            color: #2f7f87;
-            font-weight: 600;
-            margin-bottom: 12px;
-        }
-
-        .action-button {
-            padding: 10px 14px;
-            border-radius: 10px;
-            border: 0;
-            cursor: pointer;
-            font-weight: 600;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 0.9rem;
-            transition: all 0.2s;
-            margin-top: auto;
-        }
-
-        .btn-mark {
-            background: linear-gradient(135deg, #2f7f87, #6aa3a8);
-            color: #fff;
-        }
-
-        .btn-mark:hover:not(:disabled) {
-            opacity: 0.9;
-            transform: translateY(-2px);
-        }
-
-        .btn-mark:disabled {
-            background: #cbd5cf;
-            cursor: not-allowed;
-            opacity: 0.5;
-        }
-
-        .empty-state {
-            padding: 40px;
-            text-align: center;
-            color: #6c7b86;
-            background: #f4f7f9;
-            border-radius: 14px;
-            border: 1px solid #d6e0e6;
-        }
-
-        .empty-state-icon {
-            font-size: 2.5rem;
-            margin-bottom: 12px;
-        }
-
-        .subjects-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 12px;
-        }
-
-        .subject-item {
-            padding: 12px;
-            border-radius: 10px;
-            background: #f4f7f9;
-            border: 1px solid #d6e0e6;
-            font-size: 0.85rem;
-        }
-
-        .subject-item-code {
-            font-weight: 700;
-            color: #2f7f87;
-            margin-bottom: 4px;
-        }
-
-        .subject-item-name {
-            color: #1f2a37;
-            margin-bottom: 4px;
-            line-height: 1.3;
-            font-size: 0.9rem;
-        }
-
-        .subject-item-meta {
-            font-size: 0.75rem;
-            color: #6c7b86;
-        }
-
-        .card-section {
-            margin-bottom: 24px;
-        }
-
-        @media (max-width: 1200px) {
-            .schedule-grid {
-                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            }
-        }
-
-        @media (max-width: 640px) {
-            .schedule-grid {
-                grid-template-columns: 1fr;
-            }
-            .subjects-list {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-
-    <!-- Stats Section -->
-    <div class="dashboard-layout">
-        <!-- Schedule Section -->
-        <div class="dashboard-column">
-            <div class="card-section">
-                <h3 class="section-title">Today's Schedule</h3>
-                <?php if (!empty($assignments)): ?>
-                    <div class="schedule-grid">
-                        <?php foreach ($assignments as $slot): ?>
-                            <div class="schedule-card <?php echo !$slot['is_enabled'] ? 'disabled' : ''; ?>">
-                                <div class="subject-code"><?php echo e($slot['subject_code']); ?></div>
-                                <div class="subject-name"><?php echo e($slot['subject_name']); ?></div>
-                                <div class="class-info">
-                                    <?php echo e($slot['academic_year']); ?><br>
-                                    Semester <?php echo e($slot['semester_number']); ?>
-                                </div>
-                                <div class="time-slot">
-                                    <?php echo e(date('H:i A', strtotime($slot['start_time']))); ?> - 
-                                    <?php echo e(date('H:i A', strtotime($slot['end_time']))); ?>
-                                </div>
-                                <a href="<?php echo e(url("teacher/attendance/mark/{$slot['id']}")); ?>" 
-                                   class="action-button btn-mark"
-                                   <?php echo !$slot['is_enabled'] ? 'style="pointer-events: none;" title="Attendance window is closed"' : ''; ?>>
-                                    Mark Attendance
-                                </a>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php else: ?>
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📅</div>
-                        <p><strong>No classes scheduled for today</strong></p>
-                        <p>Your timetable shows no sessions on this day.</p>
-                    </div>
-                <?php endif; ?>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="20" height="20" role="img" aria-label="Subjects">
+                    <path d="M4 6h10a3 3 0 0 1 3 3v9H7a3 3 0 0 0-3 3V6z" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                    <path d="M7 6v12" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                    <path d="M17 18h3V9a3 3 0 0 0-3-3h-3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                </svg>
+            </div>
+            <div>
+                <div class="stat-label">Assigned Subjects</div>
+                <div class="stat-value"><?php echo e($stats['assigned_subjects'] ?? 0); ?></div>
             </div>
         </div>
+        <div class="stat-card">
+            <div class="stat-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="20" height="20" role="img" aria-label="Classes">
+                    <path d="M3 7h18v10H3z" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                    <path d="M7 17v2h10v-2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                    <path d="M8 11h8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                </svg>
+            </div>
+            <div>
+                <div class="stat-label">Assigned Classes</div>
+                <div class="stat-value"><?php echo e($stats['assigned_classes'] ?? 0); ?></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="20" height="20" role="img" aria-label="Today">
+                    <path d="M7 3v4M17 3v4" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                    <rect x="4" y="5" width="16" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                    <path d="M4 9h16" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                </svg>
+            </div>
+            <div>
+                <div class="stat-label">Today's Classes</div>
+                <div class="stat-value"><?php echo e($stats['today_classes'] ?? 0); ?></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="20" height="20" role="img" aria-label="Pending">
+                    <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                    <path d="M12 8v4l3 2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div>
+                <div class="stat-label">Pending Attendance</div>
+                <div class="stat-value"><?php echo e($stats['pending_attendance'] ?? 0); ?></div>
+            </div>
+        </div>
+    </div>
 
-        <!-- Subjects Section -->
+    <div class="dashboard-layout single-column">
         <div class="dashboard-column">
-            <div class="card-section">
-                <h3 class="section-title">My Subjects</h3>
-                <?php if (!empty($all_subjects)): ?>
-                    <div class="subjects-list">
-                        <?php foreach ($all_subjects as $subject): ?>
-                            <div class="subject-item">
-                                <div class="subject-item-code"><?php echo e($subject['subject_code']); ?></div>
-                                <div class="subject-item-name"><?php echo e($subject['subject_name']); ?></div>
-                                <div class="subject-item-meta">
-                                    <?php echo e($subject['academic_year']); ?> | 
-                                    S<?php echo e($subject['semester_number']); ?>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
+            <div class="widget" id="today-schedule">
+                <div class="widget-header">
+                    <div>
+                        <h3 class="widget-title">Today's Schedule</h3>
+                        <p class="widget-meta">Only your classes for today</p>
+                    </div>
+                    <span class="widget-pill"><?php echo e($stats['today_classes'] ?? 0); ?> sessions</span>
+                </div>
+
+                <?php if (!empty($assignments)): ?>
+                    <div class="table-container">
+                        <table class="table-view-table schedule-table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Code</th>
+                                    <th>Subject</th>
+                                    <th>Academic Year</th>
+                                    <th>Semester</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($assignments as $slot): ?>
+                                    <tr>
+                                        <td class="schedule-time">
+                                            <?php echo e(date('H:i A', strtotime($slot['start_time']))); ?> -
+                                            <?php echo e(date('H:i A', strtotime($slot['end_time']))); ?>
+                                        </td>
+                                        <td>
+                                            <span class="schedule-code"><?php echo e($slot['subject_code'] ?? '-'); ?></span>
+                                        </td>
+                                        <td>
+                                            <span class="schedule-name"><?php echo e($slot['subject_name'] ?? ''); ?></span>
+                                        </td>
+                                        <td><span class="schedule-meta"><?php echo e($slot['academic_year'] ?? ''); ?></span></td>
+                                        <td><span class="schedule-meta">Semester <?php echo e($slot['semester_number'] ?? ''); ?></span></td>
+                                        <td>
+                                            <div class="schedule-action">
+                                                <?php if (!empty($slot['attendance_marked'])): ?>
+                                                    <button class="btn btn-ghost" disabled>Completed</button>
+                                                <?php elseif (empty($slot['is_enabled'])): ?>
+                                                    <button class="btn btn-ghost" disabled>Window Closed</button>
+                                                <?php else: ?>
+                                                    <a class="btn btn-primary" href="<?php echo e(url("teacher/attendance/mark/{$slot['id']}")); ?>">Mark Attendance</a>
+                                                <?php endif; ?>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     </div>
                 <?php else: ?>
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📚</div>
-                        <p><strong>No subjects assigned yet</strong></p>
-                        <p>You don't have any subject assignments.</p>
+                    <div class="empty-state" style="padding: 16px; text-align: center;">
+                        No classes scheduled for today.
                     </div>
                 <?php endif; ?>
             </div>

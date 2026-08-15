@@ -52,6 +52,7 @@ $router->get('/change-password', AuthController::class . '@showChangePassword', 
 $router->post('/change-password', AuthController::class . '@changePassword', ['auth']);
 $router->get('/forgot-password', AuthController::class . '@showForgotPassword', ['guest']);
 $router->post('/forgot-password', AuthController::class . '@sendPasswordReset', ['guest']);
+$router->get('/verify-password-reset-email', AuthController::class . '@verifyPasswordResetEmail', ['guest']);
 $router->get('/reset-password', AuthController::class . '@showResetPassword', ['guest']);
 $router->post('/reset-password', AuthController::class . '@resetPassword', ['guest']);
 $router->get('/activate/{token}', ActivationController::class . '@show', ['guest']);
@@ -84,6 +85,7 @@ $router->get('/users/{id}/edit', UserController::class . '@edit', ['auth', 'role
 $router->post('/users', UserController::class . '@store', ['auth', 'role:admin']);
 $router->post('/users/{id}', UserController::class . '@update', ['auth', 'role:admin']);
 $router->delete('/users/{id}', UserController::class . '@destroy', ['auth', 'role:admin']);
+$router->post('/users/{id}/resend-activation', UserController::class . '@resendActivation', ['auth', 'role:admin']);
 
 // ============================================================================
 // PROGRAM ROUTES
@@ -213,6 +215,7 @@ $router->get('/principal', PrincipalController::class . '@showDashboard', ['auth
 // Principal Account Management
 $router->get('/principal/accounts', PrincipalController::class . '@showAccounts', ['auth', 'role:principal']);
 $router->get('/principal/accounts/create', PrincipalController::class . '@createAccountForm', ['auth', 'role:principal']);
+$router->get('/principal/accounts/next-login-id', PrincipalController::class . '@getNextLoginId', ['auth', 'role:principal']);
 $router->post('/principal/accounts', PrincipalController::class . '@storeAccount', ['auth', 'role:principal']);
 $router->patch('/principal/accounts/{id}/toggle', PrincipalController::class . '@toggleAccountStatus', ['auth', 'role:principal']);
 
@@ -228,6 +231,7 @@ $router->get('/principal/teachers/{id}', PrincipalController::class . '@showTeac
 $router->get('/principal/profile', PrincipalController::class . '@showProfile', ['auth', 'role:principal']);
 $router->post('/principal/profile', PrincipalController::class . '@updateProfile', ['auth', 'role:principal']);
 $router->post('/principal/profile/email', PrincipalController::class . '@updateEmail', ['auth', 'role:principal']);
+$router->post('/principal/profile/email/verify-otp', PrincipalController::class . '@verifyEmailChangeOtp', ['auth', 'role:principal']);
 
 // Principal System Configuration
 $router->get('/principal/config', PrincipalController::class . '@showConfig', ['auth', 'role:principal']);
@@ -252,6 +256,11 @@ $router->get('/api/principal/teachers', PrincipalController::class . '@apiGetTea
 $router->get('/api/principal/password-resets', PrincipalController::class . '@apiGetPasswordResets', ['auth', 'role:principal']);
 $router->get('/api/principal/email-requests', PrincipalController::class . '@apiGetEmailChangeRequests', ['auth', 'role:principal']);
 
+// Vice Principal API Endpoints
+$router->get('/api/vp/dashboard', VPController::class . '@apiDashboard', ['auth', 'role:vp']);
+$router->get('/api/vp/password-resets', VPController::class . '@apiGetPasswordResets', ['auth', 'role:vp']);
+$router->get('/api/vp/email-requests', VPController::class . '@apiGetEmailChangeRequests', ['auth', 'role:vp']);
+
 // ============================================================================
 // VICE PRINCIPAL ROUTES
 // ============================================================================
@@ -266,6 +275,7 @@ $router->get('/vp', VPController::class . '@showDashboard', ['auth', 'role:vp'])
 $router->get('/vp/profile', VPController::class . '@showProfile', ['auth', 'role:vp']);
 $router->post('/vp/profile', VPController::class . '@updateProfile', ['auth', 'role:vp']);
 $router->post('/vp/profile/email', VPController::class . '@requestEmailChange', ['auth', 'role:vp']);
+$router->post('/vp/profile/email/verify-otp', VPController::class . '@verifyEmailChangeOtp', ['auth', 'role:vp']);
 
 // Vice Principal Program Management
 $router->get('/vp/programs', VPController::class . '@showPrograms', ['auth', 'role:vp']);
@@ -275,6 +285,7 @@ $router->post('/vp/programs', VPController::class . '@createProgram', ['auth', '
 $router->get('/vp/semesters', VPController::class . '@showSemesters', ['auth', 'role:vp']);
 $router->post('/vp/semesters', VPController::class . '@createSemester', ['auth', 'role:vp']);
 $router->post('/vp/semesters/{id}/activate', VPController::class . '@activateSemester', ['auth', 'role:vp']);
+$router->post('/vp/semesters/toggle-term', VPController::class . '@toggleSemesterTerm', ['auth', 'role:vp']);
 
 // Vice Principal Subject Management
 $router->get('/vp/subjects', VPController::class . '@showSubjects', ['auth', 'role:vp']);
@@ -282,6 +293,8 @@ $router->post('/vp/subjects', VPController::class . '@createSubject', ['auth', '
 
 // Vice Principal Teacher Management
 $router->get('/vp/teachers', VPController::class . '@showTeachers', ['auth', 'role:vp']);
+$router->get('/vp/teachers/next-login-id', VPController::class . '@getNextTeacherLoginId', ['auth', 'role:vp']);
+$router->get('/vp/teachers/{id}', VPController::class . '@showTeacherDetail', ['auth', 'role:vp']);
 $router->post('/vp/teachers', VPController::class . '@createTeacher', ['auth', 'role:vp']);
 
 // Vice Principal Assignment Management
@@ -299,6 +312,11 @@ $router->get('/vp/password-requests', VPController::class . '@showPasswordReques
 $router->post('/vp/password-requests/{id}/approve', VPController::class . '@approvePasswordReset', ['auth', 'role:vp']);
 $router->post('/vp/password-requests/{id}/reject', VPController::class . '@rejectPasswordReset', ['auth', 'role:vp']);
 
+// Vice Principal Email Change Requests
+$router->get('/vp/email-requests', VPController::class . '@showEmailChangeRequests', ['auth', 'role:vp']);
+$router->post('/vp/email-requests/{id}/approve', VPController::class . '@approveEmailChange', ['auth', 'role:vp']);
+$router->post('/vp/email-requests/{id}/reject', VPController::class . '@rejectEmailChange', ['auth', 'role:vp']);
+
 // ============================================================================
 // MANAGER ROUTES
 // ============================================================================
@@ -309,6 +327,9 @@ $router->get('/manager', ManagerController::class . '@showDashboard', ['auth', '
 
 // Manager Student Management
 $router->get('/manager/students', ManagerController::class . '@showStudents', ['auth', 'role:manager']);
+
+// Manager Promotions
+$router->get('/manager/promotions', ManagerController::class . '@showPromotions', ['auth', 'role:manager']);
 
 // Manager CSV Upload (MUST come before {id} route to avoid being matched as ID)
 $router->get('/manager/students/csv-upload', ManagerController::class . '@showCsvUpload', ['auth', 'role:manager']);
@@ -325,14 +346,25 @@ $router->get('/manager/password-resets', ManagerController::class . '@showPasswo
 $router->post('/api/manager/reset-requests/{id}/approve', ManagerController::class . '@approvePasswordReset', ['auth', 'role:manager']);
 $router->post('/api/manager/reset-requests/{id}/reject', ManagerController::class . '@rejectPasswordReset', ['auth', 'role:manager']);
 
+// Manager Email Change Requests
+$router->get('/manager/email-requests', ManagerController::class . '@showEmailChangeRequests', ['auth', 'role:manager']);
+$router->post('/manager/email-requests/{id}/approve', ManagerController::class . '@approveEmailChange', ['auth', 'role:manager']);
+$router->post('/manager/email-requests/{id}/reject', ManagerController::class . '@rejectEmailChange', ['auth', 'role:manager']);
+
 // Manager Profile
 $router->get('/manager/profile', ManagerController::class . '@showProfile', ['auth', 'role:manager']);
 $router->post('/manager/profile', ManagerController::class . '@updateProfile', ['auth', 'role:manager']);
 $router->post('/manager/profile/email', ManagerController::class . '@requestEmailChange', ['auth', 'role:manager']);
+$router->post('/manager/profile/email/verify-otp', ManagerController::class . '@verifyEmailChangeOtp', ['auth', 'role:manager']);
 
 // Manager API Endpoints
+$router->get('/api/manager/dashboard', ManagerController::class . '@apiDashboard', ['auth', 'role:manager']);
 $router->get('/api/manager/students', ManagerController::class . '@apiGetStudents', ['auth', 'role:manager']);
 $router->get('/api/manager/reset-requests', ManagerController::class . '@apiGetStudentResetRequests', ['auth', 'role:manager']);
+$router->get('/api/manager/email-requests', ManagerController::class . '@apiGetEmailChangeRequests', ['auth', 'role:manager']);
+$router->get('/api/manager/promotions', ManagerController::class . '@apiGetPromotionLists', ['auth', 'role:manager']);
+$router->post('/api/manager/promotions/promote', ManagerController::class . '@apiPromoteStudents', ['auth', 'role:manager']);
+$router->post('/api/manager/promotions/remind', ManagerController::class . '@apiRemindStudents', ['auth', 'role:manager']);
 
 // ============================================================================
 // ACCOUNTANT ROUTES
@@ -351,6 +383,7 @@ $router->get('/accountant/student-fees', AccountantController::class . '@showStu
 $router->get('/accountant/profile', AccountantController::class . '@showProfile', ['auth', 'role:accountant']);
 $router->post('/accountant/profile', AccountantController::class . '@updateProfile', ['auth', 'role:accountant']);
 $router->post('/accountant/profile/email', AccountantController::class . '@requestEmailChange', ['auth', 'role:accountant']);
+$router->post('/accountant/profile/email/verify-otp', AccountantController::class . '@verifyEmailChangeOtp', ['auth', 'role:accountant']);
 
 // Accountant API Endpoints
 $router->get('/api/accountant/programs', AccountantController::class . '@apiGetPrograms', ['auth', 'role:accountant']);
@@ -370,14 +403,22 @@ $router->get('/teacher/dashboard', TeacherController::class . '@showDashboard', 
 $router->get('/teacher', TeacherController::class . '@showDashboard', ['auth', 'role:teacher']); // Backward compatibility alias
 
 // Teacher Attendance Marking
+$router->get('/teacher/attendance', TeacherController::class . '@showAttendanceSessions', ['auth', 'role:teacher']);
 $router->get('/teacher/attendance/mark/{slotId}', TeacherController::class . '@showMarkAttendance', ['auth', 'role:teacher']);
 
 // Teacher Attendance History
 $router->get('/teacher/attendance/history', TeacherController::class . '@showAttendanceHistory', ['auth', 'role:teacher']);
 
+// Teacher Timetable + Students
+$router->get('/teacher/timetable', TeacherController::class . '@showTimetable', ['auth', 'role:teacher']);
+$router->get('/teacher/students', TeacherController::class . '@showStudents', ['auth', 'role:teacher']);
+$router->get('/teacher/students/{id}', TeacherController::class . '@showStudentDetail', ['auth', 'role:teacher']);
+
 // Teacher Profile
 $router->get('/teacher/profile', TeacherController::class . '@showProfile', ['auth', 'role:teacher']);
 $router->post('/teacher/profile', TeacherController::class . '@updateProfile', ['auth', 'role:teacher']);
+$router->post('/teacher/profile/email', TeacherController::class . '@requestEmailChange', ['auth', 'role:teacher']);
+$router->post('/teacher/profile/email/verify-otp', TeacherController::class . '@verifyEmailChangeOtp', ['auth', 'role:teacher']);
 
 // Teacher API Endpoints
 $router->post('/api/teacher/attendance/{slotId}/submit', TeacherController::class . '@submitAttendance', ['auth', 'role:teacher']);
@@ -393,6 +434,9 @@ $router->get('/student', StudentController::class . '@showDashboard', ['auth', '
 // Student Timetable
 $router->get('/student/timetable', StudentController::class . '@showTimetable', ['auth', 'role:student']);
 
+// Student Subjects
+$router->get('/student/subjects', StudentController::class . '@showSubjects', ['auth', 'role:student']);
+
 // Student Attendance
 $router->get('/student/attendance', StudentController::class . '@showAttendance', ['auth', 'role:student']);
 
@@ -402,6 +446,8 @@ $router->get('/student/fees', StudentController::class . '@showFees', ['auth', '
 // Student Profile
 $router->get('/student/profile', StudentController::class . '@showProfile', ['auth', 'role:student']);
 $router->post('/student/profile', StudentController::class . '@updateProfile', ['auth', 'role:student']);
+$router->post('/student/profile/email', StudentController::class . '@requestEmailChange', ['auth', 'role:student']);
+$router->post('/student/profile/email/verify-otp', StudentController::class . '@verifyEmailChangeOtp', ['auth', 'role:student']);
 
 // Student API Endpoints
 $router->post('/api/student/profile', StudentController::class . '@updateProfile', ['auth', 'role:student']);

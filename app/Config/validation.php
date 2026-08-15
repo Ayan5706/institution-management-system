@@ -16,7 +16,7 @@ return [
         'password_confirm' => 'required|same:password',
         'role' => 'required|in:admin,principal,teacher,student,staff',
         'status' => 'in:active,inactive,suspended',
-        'phone' => 'nullable|regex:/^[0-9]{10,15}$/',
+        'phone' => 'nullable|regex:/^[0-9]{10}$/',
     ],
 
     'user.update' => [
@@ -24,7 +24,7 @@ return [
         'email' => 'required|email|unique:users,email,{id}',
         'role' => 'required|in:admin,principal,teacher,student,staff',
         'status' => 'in:active,inactive,suspended',
-        'phone' => 'nullable|regex:/^[0-9]{10,15}$/',
+        'phone' => 'nullable|regex:/^[0-9]{10}$/',
     ],
 
     'user.password_change' => [

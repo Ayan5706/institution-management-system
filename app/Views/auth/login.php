@@ -139,7 +139,7 @@ $actionUrl = url('login');
 
     <div class="field">
         <label for="email">Login ID</label>
-        <input id="email" name="email" type="text" value="<?php echo e((string) old('email', '')); ?>" placeholder="Login ID" autocomplete="username" required>
+        <input id="email" name="email" type="text" value="<?php echo e((string) old('email', '')); ?>" placeholder="Login ID" autocomplete="username" pattern="[a-zA-Z0-9._]+" title="Login ID should contain only letters, numbers, dots, and underscores" required>
     </div>
 
     <div class="field">
@@ -252,10 +252,17 @@ $actionUrl = url('login');
             const payload = data && data.data ? data.data : {};
             const user = payload.user ? payload.user : {};
             const mustChangePassword = Boolean(user.must_change_password ?? payload.must_change_password);
+            const needsProfileCompletion = Boolean(payload.needs_profile_completion);
 
             // Redirect based on must_change_password first
             if (mustChangePassword) {
                 window.location.href = '<?php echo e(url('change-password')); ?>';
+                return;
+            }
+
+            // Redirect to profile completion for principal accounts
+            if (needsProfileCompletion && (user.role ?? payload.role ?? '').toString().toUpperCase() === 'PRINCIPAL') {
+                window.location.href = '<?php echo e(url('principal/profile')); ?>';
                 return;
             }
 

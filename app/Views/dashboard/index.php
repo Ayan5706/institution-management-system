@@ -86,17 +86,26 @@ $systemChecks = [
                         <p class="widget-meta">Latest system events</p>
                     </div>
                 </div>
-                <ul class="activity-list">
-                    <?php foreach ($recentActivities as $activity): ?>
-                        <li class="activity-item">
-                            <div>
-                                <strong><?php echo e($activity['title']); ?></strong>
-                                <div class="activity-meta"><?php echo e($activity['detail']); ?></div>
-                            </div>
-                            <span class="activity-meta"><?php echo e($activity['time']); ?></span>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
+                <div class="table-container">
+                    <table class="table-view-table">
+                        <thead>
+                            <tr>
+                                <th>Activity</th>
+                                <th>Details</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($recentActivities as $activity): ?>
+                                <tr>
+                                    <td><strong><?php echo e($activity['title']); ?></strong></td>
+                                    <td><span class="activity-meta"><?php echo e($activity['detail']); ?></span></td>
+                                    <td><span class="activity-meta"><?php echo e($activity['time']); ?></span></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <div class="widget">
@@ -122,16 +131,24 @@ $systemChecks = [
                         <p class="widget-meta">Health checks</p>
                     </div>
                 </div>
-                <ul class="activity-list">
-                    <?php foreach ($systemChecks as $check): ?>
-                        <li class="activity-item">
-                            <div>
-                                <strong><?php echo e($check['label']); ?></strong>
-                            </div>
-                            <span class="activity-meta"><?php echo e($check['status']); ?></span>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
+                <div class="table-container">
+                    <table class="table-view-table">
+                        <thead>
+                            <tr>
+                                <th>Check</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($systemChecks as $check): ?>
+                                <tr>
+                                    <td><strong><?php echo e($check['label']); ?></strong></td>
+                                    <td><span class="activity-meta"><?php echo e($check['status']); ?></span></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <div class="widget">

@@ -8,11 +8,13 @@ use App\Models\UserModel;
 use App\Models\PasswordResetRequestModel;
 use App\Models\ActivationTokenModel;
 use App\Models\EmailChangeRequestModel;
+use App\Models\EmailChangeVerificationModel;
 use App\Models\SystemConfigModel;
 use App\Models\StudentProfileModel;
 use App\Models\TeacherAssignmentModel;
 use App\Models\ProgramModel;
 use App\Models\SemesterModel;
+use App\Models\StudentFeeModel;
 use App\Models\SubjectModel;
 use App\Models\AttendanceModel;
 use App\Services\MailService;
@@ -26,11 +28,13 @@ class PrincipalController extends BaseController
     private PasswordResetRequestModel $resetModel;
     private ActivationTokenModel $activationTokens;
     private EmailChangeRequestModel $emailChangeRequests;
+    private EmailChangeVerificationModel $emailChangeVerifications;
     private SystemConfigModel $configModel;
     private StudentProfileModel $studentModel;
     private TeacherAssignmentModel $teacherAssignmentModel;
     private ProgramModel $programModel;
     private SemesterModel $semesterModel;
+    private StudentFeeModel $feeModel;
     private SubjectModel $subjectModel;
     private AttendanceModel $attendanceModel;
     private MailService $mailService;
@@ -41,11 +45,13 @@ class PrincipalController extends BaseController
         $this->resetModel = new PasswordResetRequestModel();
         $this->activationTokens = new ActivationTokenModel();
         $this->emailChangeRequests = new EmailChangeRequestModel();
+        $this->emailChangeVerifications = new EmailChangeVerificationModel();
         $this->configModel = new SystemConfigModel();
         $this->studentModel = new StudentProfileModel();
         $this->teacherAssignmentModel = new TeacherAssignmentModel();
         $this->programModel = new ProgramModel();
         $this->semesterModel = new SemesterModel();
+        $this->feeModel = new StudentFeeModel();
         $this->subjectModel = new SubjectModel();
         $this->attendanceModel = new AttendanceModel();
         $this->mailService = new MailService();
@@ -101,18 +107,31 @@ class PrincipalController extends BaseController
         $programs = $this->programModel->where('is_active', 1);
         $totalPrograms = count($programs);
 
-        // Pending password resets
+        // Pending password resets (admin roles only)
         $pendingResets = $this->resetModel->where('status', 'PENDING');
-        $pendingCount = count($pendingResets);
+        $pendingCount = 0;
+        foreach ($pendingResets as $reset) {
+            $user = $this->userModel->find((int) $reset['requested_by']);
+            if ($user && in_array($user['role'], ['VP', 'MANAGER', 'ACCOUNTANT'], true)) {
+                $pendingCount++;
+            }
+        }
 
         $pendingEmailChanges = $this->emailChangeRequests->where('status', 'PENDING');
+        $pendingEmailCount = 0;
+        foreach ($pendingEmailChanges as $request) {
+            $user = $this->userModel->find((int) ($request['user_id'] ?? 0));
+            if ($user && in_array($user['role'], ['VP', 'MANAGER', 'ACCOUNTANT'], true)) {
+                $pendingEmailCount++;
+            }
+        }
 
         return [
             'total_students' => $totalStudents,
             'total_teachers' => $totalTeachers,
             'total_programs' => $totalPrograms,
             'pending_resets' => $pendingCount,
-            'pending_email_changes' => count($pendingEmailChanges),
+            'pending_email_changes' => $pendingEmailCount,
         ];
     }
 
@@ -183,14 +202,7 @@ class PrincipalController extends BaseController
 
         $adminAccounts = array_merge($vpAccounts, $managerAccounts, $accountantAccounts);
         usort($adminAccounts, static function (array $a, array $b): int {
-            $roleA = (string) ($a['role'] ?? '');
-            $roleB = (string) ($b['role'] ?? '');
-
-            if ($roleA === $roleB) {
-                return strcasecmp((string) ($a['full_name'] ?? ''), (string) ($b['full_name'] ?? ''));
-            }
-
-            return strcasecmp($roleA, $roleB);
+            return (int) ($a['id'] ?? 0) <=> (int) ($b['id'] ?? 0);
         });
 
         $this->view('principal.accounts', [
@@ -214,25 +226,30 @@ class PrincipalController extends BaseController
         $data = json_decode((string) file_get_contents('php://input'), true) ?? [];
 
         $fullName = (string) ($data['full_name'] ?? $this->input('full_name', ''));
-        $loginId = (string) ($data['login_id'] ?? $this->input('login_id', ''));
         $email = (string) ($data['email'] ?? $this->input('email', ''));
-        $phone = (string) ($data['phone'] ?? $this->input('phone', ''));
         $role = strtoupper((string) ($data['role'] ?? $this->input('role', '')));
+        $phone = '';
 
         $errors = [];
 
         // Validation
-        if ($loginId === '') {
-            $errors['loginId'] = 'Login ID is required.';
-        }
+        // Full Name: only letters and spaces
         if ($fullName === '') {
             $errors['fullName'] = 'Full Name is required.';
+        } elseif (!preg_match('/^[a-zA-Z\s]+$/', $fullName)) {
+            $errors['fullName'] = 'Please enter your complete name (e.g., John Doe).';
+        } elseif (strlen(trim($fullName)) < 2) {
+            $errors['fullName'] = 'Full Name must be at least 2 characters.';
         }
+
+        // Email: alphanumeric before @, must be Gmail format
         if ($email === '') {
             $errors['email'] = 'Email is required.';
-        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errors['email'] = 'Please enter a valid email address.';
+        } elseif (!preg_match('/^[a-zA-Z0-9]+@gmail\.com$/i', $email)) {
+            $errors['email'] = 'Please enter a valid email.';
         }
+
+        // Role validation
         if ($role === '' || !in_array($role, ['VP', 'MANAGER', 'ACCOUNTANT'])) {
             $this->json([
                 'success' => false,
@@ -240,6 +257,8 @@ class PrincipalController extends BaseController
             ], 422);
             return;
         }
+
+        $loginId = $this->generateNextLoginId($role);
 
         // Return errors if any
         if (!empty($errors)) {
@@ -306,15 +325,17 @@ class PrincipalController extends BaseController
             ]);
 
             $activationLink = url('activate/' . $token);
-            $subject = 'Activate your EduHub account';
+            $subject = 'Activate your IMS account';
+
+            $roleLabel = $role === 'VP' ? 'Vice principal' : $role;
             $htmlBody = sprintf(
                 '<p>Hello %s,</p><p>Your %s account has been created. Please activate your account using the link below (valid for 24 hours):</p><p><a href="%s">Activate Account</a></p><p>Login ID: <strong>%s</strong></p><p>If you did not expect this email, please contact support.</p>',
                 e($fullName),
-                e($role),
+                e($roleLabel),
                 e($activationLink),
                 e($loginId)
             );
-            $textBody = "Hello {$fullName},\n\nYour {$role} account has been created. Activate your account using the link below (valid for 24 hours):\n{$activationLink}\n\nLogin ID: {$loginId}\n\nIf you did not expect this email, please contact support.";
+            $textBody = "Hello {$fullName},\n\nYour {$roleLabel} account has been created. Activate your account using the link below (valid for 24 hours):\n{$activationLink}\n\nLogin ID: {$loginId}\n\nIf you did not expect this email, please contact support.";
 
             $this->mailService->sendMail($email, $subject, $htmlBody, $textBody);
 
@@ -325,6 +346,7 @@ class PrincipalController extends BaseController
                 'data'    => [
                     'id'            => $userId,
                     'role'          => $role,
+                    'temp_password' => $tempPassword,
                 ],
             ], 201);
         } catch (\Exception $e) {
@@ -338,6 +360,67 @@ class PrincipalController extends BaseController
                 'success' => false,
                 'message' => 'Error creating account: ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    public function getNextLoginId(): void
+    {
+        $role = strtoupper((string) $this->input('role', ''));
+        if ($role === '' || !in_array($role, ['VP', 'MANAGER', 'ACCOUNTANT'], true)) {
+            $this->json([
+                'success' => false,
+                'message' => 'Invalid role. Must be VP, MANAGER, or ACCOUNTANT.',
+            ], 422);
+            return;
+        }
+
+        $loginId = $this->generateNextLoginId($role);
+
+        $this->json([
+            'success' => true,
+            'data' => ['login_id' => $loginId],
+        ]);
+    }
+
+    private function generateNextLoginId(string $role): string
+    {
+        $prefixMap = [
+            'VP' => 'VP',
+            'MANAGER' => 'MGR',
+            'ACCOUNTANT' => 'ACC',
+        ];
+
+        $prefix = $prefixMap[$role] ?? '';
+        if ($prefix === '') {
+            return '';
+        }
+
+        $accounts = $this->userModel->where('role', $role);
+        $maxNumber = 0;
+
+        foreach ($accounts as $account) {
+            $loginId = strtoupper((string) ($account['login_id'] ?? ''));
+            if (strpos($loginId, $prefix) !== 0) {
+                continue;
+            }
+
+            $suffix = substr($loginId, strlen($prefix));
+            if ($suffix !== '' && ctype_digit($suffix)) {
+                $number = (int) $suffix;
+                if ($number > $maxNumber) {
+                    $maxNumber = $number;
+                }
+            }
+        }
+
+        $nextNumber = $maxNumber + 1;
+
+        while (true) {
+            $candidate = sprintf('%s%03d', $prefix, $nextNumber);
+            if (!$this->userModel->firstWhere('login_id', $candidate)) {
+                return $candidate;
+            }
+            $nextNumber++;
         }
     }
 
@@ -405,7 +488,7 @@ class PrincipalController extends BaseController
              FROM semesters s
              JOIN programs p ON p.id = s.program_id
              WHERE s.is_current = 1
-             ORDER BY p.program_name ASC, s.semester_number ASC'
+               ORDER BY s.id ASC'
         );
         $semesters = $semesterStmt->fetchAll() ?: [];
 
@@ -458,6 +541,39 @@ class PrincipalController extends BaseController
             ? (int) round(($attendancePresent / $attendanceTotal) * 100)
             : 0;
 
+        // Get who created this student account
+        $createdBy = null;
+        $createdById = (int) ($user['created_by'] ?? 0);
+        if ($createdById > 0) {
+            $createdBy = $this->userModel->find($createdById);
+        }
+
+        // Get fee status for current semester
+        $feeStatus = 'N/A';
+        $feePaid = 0;
+        if ($currentSemester) {
+            $fee = $this->feeModel->firstWhere('student_id', $id);
+            $fee = $fee && ((int) ($fee['semester_id'] ?? 0) === (int) ($currentSemester['id'] ?? 0)) ? $fee : null;
+            
+            if ($fee) {
+                $feePaid = (float) ($fee['amount_paid'] ?? 0);
+                $feeAmount = (float) ($currentSemester['fee_amount'] ?? 0);
+                if ($feeAmount > 0) {
+                    if ($feePaid >= $feeAmount) {
+                        $feeStatus = 'Paid';
+                    } elseif ($feePaid > 0) {
+                        $feeStatus = 'Partial';
+                    } else {
+                        $feeStatus = 'Pending';
+                    }
+                } else {
+                    $feeStatus = 'Not Configured';
+                }
+            } elseif ($currentSemester['fee_amount']) {
+                $feeStatus = 'Pending';
+            }
+        }
+
         $this->view('principal.student-detail', [
             'title' => 'Student Details',
             'student' => $user,
@@ -469,6 +585,9 @@ class PrincipalController extends BaseController
                 'present' => $attendancePresent,
                 'rate' => $attendanceRate,
             ],
+            'created_by' => $createdBy,
+            'fee_status' => $feeStatus,
+            'fee_paid' => $feePaid,
         ]);
     }
 
@@ -488,7 +607,7 @@ class PrincipalController extends BaseController
             $query .= ' AND u.is_active = ' . ((int) ($status === 'active' ? 1 : 0));
         }
 
-        $query .= ' ORDER BY u.full_name ASC';
+        $query .= ' ORDER BY u.id ASC';
 
         $programs = $this->programModel->where('is_active', 1);
 
@@ -532,10 +651,18 @@ class PrincipalController extends BaseController
             ];
         }
 
+        // Get who created this teacher account
+        $createdBy = null;
+        $createdById = (int) ($user['created_by'] ?? 0);
+        if ($createdById > 0) {
+            $createdBy = $this->userModel->find($createdById);
+        }
+
         $this->view('principal.teacher-detail', [
             'title' => 'Teacher Details',
             'teacher' => $user,
             'assignments' => $assignmentDetails,
+            'created_by' => $createdBy,
         ]);
     }
 
@@ -558,13 +685,18 @@ class PrincipalController extends BaseController
             return;
         }
 
-        $emailVerificationPending = $this->activationTokens->hasActiveForUser($userId);
+        $emailVerification = $this->emailChangeVerifications->getActiveForUser($userId);
+        $emailVerificationPending = $emailVerification !== null;
+        $emailVerificationEmail = $emailVerificationPending ? (string) ($emailVerification['new_email'] ?? '') : '';
+        $emailVerificationExpiresAt = $emailVerificationPending ? (string) ($emailVerification['expires_at'] ?? '') : '';
 
         $this->view('principal.profile', [
             'title' => 'My Profile',
             'pageSubtitle' => 'Manage your profile details',
             'user' => $user,
             'email_verification_pending' => $emailVerificationPending,
+            'email_verification_email' => $emailVerificationEmail,
+            'email_verification_expires_at' => $emailVerificationExpiresAt,
         ]);
     }
 
@@ -589,8 +721,13 @@ class PrincipalController extends BaseController
             return;
         }
 
-        if ($phone !== '' && !preg_match('/^\d+$/', $phone)) {
-            $this->json(['success' => false, 'message' => 'Phone number must contain digits only.'], 422);
+        if (!preg_match('/^[A-Za-z\s]+$/', $fullName)) {
+            $this->json(['success' => false, 'message' => 'Full name must contain letters only.'], 422);
+            return;
+        }
+
+        if ($phone !== '' && !preg_match('/^\d{10}$/', $phone)) {
+            $this->json(['success' => false, 'message' => 'Phone number must be exactly 10 digits.'], 422);
             return;
         }
 
@@ -637,8 +774,8 @@ class PrincipalController extends BaseController
             return;
         }
 
-        if (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
-            $this->json(['success' => false, 'message' => 'Please enter a valid email address.'], 422);
+        if (!preg_match('/^[A-Za-z0-9]+@gmail\.com$/', $newEmail)) {
+            $this->json(['success' => false, 'message' => 'Please enter a valid Gmail address (example: name@gmail.com).'], 422);
             return;
         }
 
@@ -652,6 +789,99 @@ class PrincipalController extends BaseController
             return;
         }
 
+        if (!preg_match('/^[A-Za-z0-9]+@gmail\.com$/', $confirmEmail)) {
+            $this->json(['success' => false, 'message' => 'Please enter a valid Gmail address (example: name@gmail.com).'], 422);
+            return;
+        }
+
+        $db = Database::connection();
+        $stmt = $db->prepare('SELECT id FROM users WHERE LOWER(email) = LOWER(?) AND id <> ? LIMIT 1');
+        $stmt->execute([$newEmail, $userId]);
+        if ($stmt->fetch()) {
+            $this->json(['success' => false, 'message' => 'That email address is already in use.'], 409);
+            return;
+        }
+        $this->emailChangeVerifications->clearActiveForUser($userId);
+
+        $otp = (string) random_int(100000, 999999);
+        $otpHash = hash('sha256', $otp);
+        $expiresAt = gmdate('Y-m-d H:i:s', time() + 600);
+
+        $this->emailChangeVerifications->create([
+            'user_id' => $userId,
+            'new_email' => $newEmail,
+            'otp_hash' => $otpHash,
+            'expires_at' => $expiresAt,
+            'verified_at' => null,
+            'created_at' => gmdate('Y-m-d H:i:s'),
+        ]);
+
+        try {
+            $name = (string) ($user['full_name'] ?? 'Principal');
+            $subject = 'Verify Your New Email - IMS';
+            $htmlBody = '<p>Hello ' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . ',</p>'
+                . '<p>Use the OTP below to verify your new email address for your account.</p>'
+                . '<p><strong>OTP: ' . htmlspecialchars($otp, ENT_QUOTES, 'UTF-8') . '</strong></p>'
+                . '<p>This OTP expires in 10 minutes.</p>'
+                . '<p>If you did not request this change, please ignore this email.</p>'
+                . '<p>— IMS Admin</p>';
+            $textBody = "Hello {$name},\n\n"
+                . "Use the OTP below to verify your new email address:\n"
+                . "OTP: {$otp}\n\n"
+                . "This OTP expires in 10 minutes.\n\n"
+                . "If you did not request this change, please ignore this email.\n\n"
+                . "— IMS Admin";
+            $this->mailService->sendMail($newEmail, $subject, $htmlBody, $textBody);
+        } catch (\Throwable $e) {
+            $this->emailChangeVerifications->clearActiveForUser($userId);
+            $this->json(['success' => false, 'message' => 'Unable to send OTP. Please try again later.'], 500);
+            return;
+        }
+
+        $this->json([
+            'success' => true,
+            'message' => 'OTP sent to your new email. Enter it to verify and update your email.',
+        ]);
+    }
+
+    public function verifyEmailChangeOtp(): void
+    {
+        $userId = (int) ($_SESSION['user_id'] ?? 0);
+        if ($userId === 0) {
+            $this->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            return;
+        }
+
+        $user = $this->userModel->find($userId);
+        if (!$user || strtoupper((string) ($user['role'] ?? '')) !== 'PRINCIPAL') {
+            $this->json(['success' => false, 'message' => 'Forbidden'], 403);
+            return;
+        }
+
+        $newEmail = trim((string) $this->input('new_email', ''));
+        $otp = trim((string) $this->input('email_otp', ''));
+
+        if ($newEmail === '' || $otp === '') {
+            $this->json(['success' => false, 'message' => 'New email and OTP are required.'], 422);
+            return;
+        }
+
+        if (!preg_match('/^[A-Za-z0-9]+@gmail\.com$/', $newEmail)) {
+            $this->json(['success' => false, 'message' => 'Please enter a valid Gmail address (example: name@gmail.com).'], 422);
+            return;
+        }
+
+        if (!preg_match('/^\d{6}$/', $otp)) {
+            $this->json(['success' => false, 'message' => 'OTP must be a 6-digit code.'], 422);
+            return;
+        }
+
+        $currentEmail = (string) ($user['email'] ?? '');
+        if ($currentEmail !== '' && strcasecmp($currentEmail, $newEmail) === 0) {
+            $this->json(['success' => false, 'message' => 'New email must be different from the current email.'], 422);
+            return;
+        }
+
         $db = Database::connection();
         $stmt = $db->prepare('SELECT id FROM users WHERE LOWER(email) = LOWER(?) AND id <> ? LIMIT 1');
         $stmt->execute([$newEmail, $userId]);
@@ -660,54 +890,48 @@ class PrincipalController extends BaseController
             return;
         }
 
-        try {
-            $this->userModel->updateById($userId, ['email' => $newEmail]);
-
-            $this->activationTokens->deleteByUserId($userId);
-
-            $token = bin2hex(random_bytes(32));
-            $tokenHash = hash('sha256', $token);
-            $expiresAt = (new DateTimeImmutable('now', new DateTimeZone('UTC')))
-                ->modify('+24 hours')
-                ->format('Y-m-d H:i:s');
-
-            $tokenId = $this->activationTokens->create([
-                'user_id' => $userId,
-                'token_hash' => $tokenHash,
-                'expires_at' => $expiresAt,
-                'created_by' => $userId,
-                'created_at' => gmdate('Y-m-d H:i:s'),
-            ]);
-
-            $activationLink = url('activate/' . $token);
-            $subject = 'Verify your new email address';
-            $htmlBody = sprintf(
-                '<p>Hello %s,</p><p>You requested to change your email address for your Principal account. Please verify your new email using the link below (valid for 24 hours):</p><p><a href="%s">Verify Email</a></p><p>If you did not request this change, contact support immediately.</p>',
-                e((string) ($user['full_name'] ?? 'Principal')),
-                e($activationLink)
-            );
-            $textBody = "Hello {$user['full_name']},\n\nYou requested to change your email address for your Principal account. Verify your new email using the link below (valid for 24 hours):\n{$activationLink}\n\nIf you did not request this change, contact support immediately.";
-
-            $this->mailService->sendMail($newEmail, $subject, $htmlBody, $textBody);
-
-            $_SESSION['user_email'] = $newEmail;
-
-            $this->json([
-                'success' => true,
-                'message' => 'Email updated. Please verify via the link sent to your new email.',
-            ]);
-        } catch (\Throwable $e) {
-            if ($currentEmail !== '') {
-                $this->userModel->updateById($userId, ['email' => $currentEmail]);
-            }
-            if (isset($tokenId)) {
-                $this->activationTokens->deleteById((int) $tokenId);
-            }
-            $this->json([
-                'success' => false,
-                'message' => 'Unable to update email at this time. Please try again.',
-            ], 500);
+        $verification = $this->emailChangeVerifications->getActiveForUser($userId);
+        if (!$verification) {
+            $this->json(['success' => false, 'message' => 'No active OTP found. Please request a new OTP.'], 404);
+            return;
         }
+
+        $verificationEmail = (string) ($verification['new_email'] ?? '');
+        if ($verificationEmail === '' || strcasecmp($verificationEmail, $newEmail) !== 0) {
+            $this->json(['success' => false, 'message' => 'OTP does not match the requested email. Please request a new OTP.'], 409);
+            return;
+        }
+
+        $expiresAtRaw = (string) ($verification['expires_at'] ?? '');
+        $expiresAt = null;
+        if ($expiresAtRaw !== '') {
+            $expiresAt = (new DateTimeImmutable($expiresAtRaw, new DateTimeZone('UTC')))->getTimestamp();
+        }
+
+        if ($expiresAt !== null && $expiresAt < time()) {
+            $this->emailChangeVerifications->clearActiveForUser($userId);
+            $this->json(['success' => false, 'message' => 'OTP has expired. Please request a new OTP.'], 410);
+            return;
+        }
+
+        $otpHash = hash('sha256', $otp);
+        if (!hash_equals((string) ($verification['otp_hash'] ?? ''), $otpHash)) {
+            $this->json(['success' => false, 'message' => 'Invalid OTP. Please try again.'], 422);
+            return;
+        }
+
+        $this->emailChangeVerifications->updateById((int) $verification['id'], [
+            'verified_at' => gmdate('Y-m-d H:i:s'),
+        ]);
+
+        $this->userModel->updateById($userId, ['email' => $newEmail]);
+        $_SESSION['user_email'] = $newEmail;
+
+        $this->json([
+            'success' => true,
+            'message' => 'Email verified and updated successfully.',
+            'data' => ['user_email' => $newEmail],
+        ]);
     }
 
     // ============================================================================
@@ -716,45 +940,39 @@ class PrincipalController extends BaseController
 
     public function showConfig(): void
     {
-        // Spec: config keys are UPPERCASE
         $configValues = $this->configModel->getValues([
             'WORKING_DAYS',
             'DAY_START_TIME',
             'DAY_END_TIME',
-            'GRACE_MINUTES',
         ]);
 
         $workingDayCodes = $this->configModel->getWorkingDayCodes();
         $workingDayCount = $workingDayCodes === [] ? null : (string) count($workingDayCodes);
-
-        $missing = [];
-        foreach ($configValues as $key => $value) {
-            if ($value === null || trim((string) $value) === '') {
-                $missing[] = $key;
-            }
+        if ($workingDayCount !== null) {
+            $configValues['WORKING_DAYS'] = $workingDayCount;
         }
 
-        error_log('[CONFIG_DEBUG] Principal showConfig loaded: ' . json_encode($configValues) . ' missing: ' . json_encode($missing));
-
         $this->view('principal.config', [
-            'title'       => 'System Configuration',
-            'pageSubtitle'=> 'Manage institution-wide settings',
-            'config'      => [
-                'WORKING_DAYS'  => $workingDayCount,
-                'DAY_START_TIME'=> $configValues['DAY_START_TIME'] ?? null,
-                'DAY_END_TIME'  => $configValues['DAY_END_TIME'] ?? null,
-                'GRACE_MINUTES' => $configValues['GRACE_MINUTES'] ?? null,
-            ],
-            'config_missing' => $missing,
+            'title' => 'System Configuration',
+            'pageSubtitle' => 'Manage system configuration',
+            'config' => $configValues,
         ]);
     }
 
     public function updateConfig(string $key): void
     {
-        $value = (string) $this->input('value', '');
+        $updatedBy = (int) ($_SESSION['user_id'] ?? 0);
+        if ($updatedBy === 0) {
+            $this->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            return;
+        }
 
-        // Spec: config keys are UPPERCASE
-        $allowedKeys = ['WORKING_DAYS', 'DAY_START_TIME', 'DAY_END_TIME', 'GRACE_MINUTES'];
+        $allowedKeys = [
+            'WORKING_DAYS',
+            'DAY_START_TIME',
+            'DAY_END_TIME',
+        ];
+
         if (!in_array(strtoupper($key), $allowedKeys, true)) {
             $this->json([
                 'success' => false,
@@ -762,8 +980,9 @@ class PrincipalController extends BaseController
             ], 422);
             return;
         }
-        // Normalize to uppercase
+
         $key = strtoupper($key);
+        $value = trim((string) $this->input('value', ''));
 
         if ($value === '') {
             $this->json([
@@ -792,22 +1011,30 @@ class PrincipalController extends BaseController
             }
         }
 
+        if ($key === 'DAY_START_TIME' || $key === 'DAY_END_TIME') {
+            if (!preg_match('/^([01]\d|2[0-3]):([0-5]\d)$/', $value)) {
+                $this->json([
+                    'success' => false,
+                    'message' => 'Time must be in 24-hour HH:MM format.',
+                ], 422);
+                return;
+            }
+        }
+
         try {
             $existing = $this->configModel->firstWhere('config_key', $key);
 
             if ($existing) {
-                // Update existing
                 $this->configModel->updateById($existing['id'], [
                     'config_value' => $value,
-                    'updated_by' => (int) ($_SESSION['user_id'] ?? 0),
+                    'updated_by' => $updatedBy,
                     'updated_at' => date('Y-m-d H:i:s'),
                 ]);
             } else {
-                // Create new
                 $this->configModel->create([
                     'config_key' => $key,
                     'config_value' => $value,
-                    'updated_by' => (int) ($_SESSION['user_id'] ?? 0),
+                    'updated_by' => $updatedBy,
                     'updated_at' => date('Y-m-d H:i:s'),
                 ]);
             }
@@ -823,6 +1050,7 @@ class PrincipalController extends BaseController
                 'message' => 'Configuration updated successfully.',
             ]);
         } catch (\Exception $e) {
+            \App\Helpers\logger_helper('config_update_error', 'Principal updateConfig failed: ' . $e->getMessage());
             $this->json([
                 'success' => false,
                 'message' => 'Error updating configuration.',
@@ -842,9 +1070,17 @@ class PrincipalController extends BaseController
         $resets = [];
         foreach ($pendingResets as $reset) {
             $user = $this->userModel->find((int) $reset['requested_by']);
-            if ($user && in_array($user['role'], ['VP', 'MANAGER', 'ACCOUNTANT'])) {
-                $reset['user'] = $user;
-                $resets[] = $reset;
+            if ($user && in_array($user['role'], ['VP', 'MANAGER', 'ACCOUNTANT'], true)) {
+                $resets[] = [
+                    'id' => $reset['id'] ?? null,
+                    'requested_by' => $reset['requested_by'] ?? null,
+                    'status' => $reset['status'] ?? 'PENDING',
+                    'created_at' => $reset['created_at'] ?? null,
+                    'user_name' => $user['full_name'] ?? 'N/A',
+                    'user_email' => $user['email'] ?? 'N/A',
+                    'user_role' => $user['role'] ?? 'N/A',
+                    'is_admin_user' => true,
+                ];
             }
         }
 
@@ -861,7 +1097,14 @@ class PrincipalController extends BaseController
 
     public function showEmailChangeRequests(): void
     {
-        $pendingRequests = $this->emailChangeRequests->where('status', 'PENDING');
+        $pendingRequests = [];
+        $requests = $this->emailChangeRequests->where('status', 'PENDING');
+        foreach ($requests as $request) {
+            $user = $this->userModel->find((int) ($request['user_id'] ?? 0));
+            if ($user && in_array($user['role'], ['VP', 'MANAGER', 'ACCOUNTANT'], true)) {
+                $pendingRequests[] = $request;
+            }
+        }
         $this->view('principal.email-requests', [
             'title' => 'Email Change Requests',
             'pageSubtitle' => 'Approve email change requests for admin accounts',
@@ -911,6 +1154,20 @@ class PrincipalController extends BaseController
                 'resolved_at' => date('Y-m-d H:i:s'),
             ]);
 
+            $name = (string) ($user['full_name'] ?? 'User');
+            $subject = 'Email Change Approved - IMS';
+            $htmlBody = '<p>Hello ' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . ',</p>'
+                . '<p>Your email change request has been approved.</p>'
+                . '<p>Your new email address is: <strong>' . htmlspecialchars($newEmail, ENT_QUOTES, 'UTF-8') . '</strong></p>'
+                . '<p>If you did not request this change, please contact support immediately.</p>'
+                . '<p>— IMS Admin</p>';
+            $textBody = "Hello {$name},\n\n"
+                . "Your email change request has been approved.\n"
+                . "Your new email address is: {$newEmail}\n\n"
+                . "If you did not request this change, please contact support immediately.\n\n"
+                . "— IMS Admin";
+            $this->mailService->sendMail($newEmail, $subject, $htmlBody, $textBody);
+
             $this->json([
                 'success' => true,
                 'message' => 'Email change approved and updated.',
@@ -948,6 +1205,22 @@ class PrincipalController extends BaseController
                 'resolved_by' => (int) ($_SESSION['user_id'] ?? 0),
                 'resolved_at' => date('Y-m-d H:i:s'),
             ]);
+
+            $newEmail = (string) ($request['new_email'] ?? '');
+            $recipient = $newEmail !== '' ? $newEmail : (string) ($user['email'] ?? '');
+            if ($recipient !== '') {
+                $name = (string) ($user['full_name'] ?? 'User');
+                $subject = 'Email Change Rejected - IMS';
+                $htmlBody = '<p>Hello ' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . ',</p>'
+                    . '<p>Your email change request has been rejected.</p>'
+                    . '<p>If you believe this is a mistake, please contact support.</p>'
+                    . '<p>— IMS Admin</p>';
+                $textBody = "Hello {$name},\n\n"
+                    . "Your email change request has been rejected.\n"
+                    . "If you believe this is a mistake, please contact support.\n\n"
+                    . "— IMS Admin";
+                $this->mailService->sendMail($recipient, $subject, $htmlBody, $textBody);
+            }
 
             $this->json([
                 'success' => true,
@@ -1005,12 +1278,46 @@ class PrincipalController extends BaseController
                 'resolved_at' => date('Y-m-d H:i:s'),
             ]);
 
+            $emailSent = true;
+            $emailError = '';
+            try {
+                $subject = 'IMS Password Reset Approved';
+                $name = (string) ($user['full_name'] ?? 'User');
+                $htmlBody = '<p>Hello ' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . ',</p>'
+                    . '<p>Your password reset request has been approved. Use the temporary password below to log in:</p>'
+                    . '<p><strong>' . htmlspecialchars($tempPassword, ENT_QUOTES, 'UTF-8') . '</strong></p>'
+                    . '<p>Please change your password immediately after logging in.</p>'
+                    . '<p>— IMS Admin</p>';
+                $textBody = "Hello {$name},\n\n"
+                    . "Your password reset request has been approved. Use this temporary password to log in:\n"
+                    . "{$tempPassword}\n\n"
+                    . "Please change your password immediately after logging in.\n\n"
+                    . "— IMS Admin";
+                $this->mailService->sendMail((string) $user['email'], $subject, $htmlBody, $textBody);
+            } catch (\Throwable $mailError) {
+                $emailSent = false;
+                $emailError = $mailError->getMessage();
+            }
+
+            if ($emailSent) {
+                $this->json([
+                    'success' => true,
+                    'message' => 'Password reset approved and email sent.',
+                    'data'    => [
+                        'temp_password' => $tempPassword,
+                        'user_email'    => $user['email'],
+                    ],
+                ]);
+                return;
+            }
+
             $this->json([
                 'success' => true,
-                'message' => "Password reset approved. New temporary password: {$tempPassword}",
+                'message' => 'Password reset approved, but email delivery failed. Use the temporary password below to notify the user manually.',
                 'data'    => [
                     'temp_password' => $tempPassword,
                     'user_email'    => $user['email'],
+                    'email_error'   => $emailError,
                 ],
             ]);
         } catch (\Exception $e) {
@@ -1105,6 +1412,10 @@ class PrincipalController extends BaseController
             $accounts = $this->userModel->where('role', $role);
         }
 
+        usort($accounts, static function (array $a, array $b): int {
+            return (int) ($a['id'] ?? 0) <=> (int) ($b['id'] ?? 0);
+        });
+
         $this->json([
             'success' => true,
             'data' => $accounts,
@@ -1117,15 +1428,15 @@ class PrincipalController extends BaseController
         $status = (string) $this->input('status', '');
          $semesterId = (int) $this->input('semester_id', 0);
 
-        $db = Database::connection();
-         $sql = 'SELECT u.id, u.login_id, u.full_name, u.email, u.phone, u.is_active,
-                  sp.registration_number, p.program_code, p.program_name,
-                  s.id AS semester_id, s.semester_number, s.academic_year
-                FROM users u
-                LEFT JOIN student_profiles sp ON u.id = sp.user_id
-                LEFT JOIN programs p ON sp.program_id = p.id
-              LEFT JOIN semesters s ON s.program_id = p.id AND s.is_current = 1
-                WHERE u.role = "STUDENT"';
+                $db = Database::connection();
+                $sql = 'SELECT u.id, u.login_id, u.full_name, u.email, u.phone, u.is_active,
+                                    sp.registration_number, p.program_code, p.program_name,
+                                    s.id AS semester_id, s.semester_number, s.academic_year
+                                FROM users u
+                                LEFT JOIN student_profiles sp ON u.id = sp.user_id
+                                LEFT JOIN programs p ON sp.program_id = p.id
+                                LEFT JOIN semesters s ON s.id = sp.enrollment_semester_id
+                                WHERE u.role = "STUDENT"';
 
         $params = [];
 
@@ -1144,7 +1455,7 @@ class PrincipalController extends BaseController
             $params['semester_id'] = $semesterId;
         }
 
-        $sql .= ' ORDER BY u.full_name ASC';
+        $sql .= ' ORDER BY COALESCE(sp.registration_number, u.login_id) ASC, u.id ASC';
 
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
@@ -1175,7 +1486,7 @@ class PrincipalController extends BaseController
 
         $db = Database::connection();
         $sql = 'SELECT u.id, u.login_id, u.full_name, u.email, u.phone, u.is_active,
-                       GROUP_CONCAT(DISTINCT p.program_name ORDER BY p.program_name SEPARATOR ", ") AS program_names,
+                  GROUP_CONCAT(DISTINCT p.program_name ORDER BY p.id SEPARATOR ", ") AS program_names,
                        GROUP_CONCAT(DISTINCT p.id ORDER BY p.id SEPARATOR ",") AS program_ids
                 FROM users u
                 LEFT JOIN teacher_assignments ta ON ta.teacher_id = u.id
@@ -1192,7 +1503,7 @@ class PrincipalController extends BaseController
         }
 
         $sql .= ' GROUP BY u.id, u.login_id, u.full_name, u.email, u.phone, u.is_active
-                  ORDER BY u.full_name ASC';
+              ORDER BY u.id ASC';
 
         $stmt = $db->prepare($sql);
         $stmt->execute($params);

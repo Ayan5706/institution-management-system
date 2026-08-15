@@ -24,6 +24,7 @@ final class MailService
         $fromName = (string) ($config['from_name'] ?? '');
 
         if ($host === '' || $username === '' || $password === '' || $fromAddress === '') {
+            \App\Helpers\logger_helper('mail_error', 'Mail configuration is incomplete.');
             throw new RuntimeException('Mail configuration is incomplete.');
         }
 
@@ -48,6 +49,10 @@ final class MailService
 
             $mailer->send();
         } catch (MailException $e) {
+            \App\Helpers\logger_helper('mail_error', 'Failed to send email: ' . $e->getMessage());
+            throw new RuntimeException('Failed to send email: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            \App\Helpers\logger_helper('mail_error', 'Unexpected mail error: ' . $e->getMessage());
             throw new RuntimeException('Failed to send email: ' . $e->getMessage());
         }
     }

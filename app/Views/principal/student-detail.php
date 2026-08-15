@@ -4,6 +4,9 @@
 /** @var array|null $program */
 /** @var array|null $current_semester */
 /** @var array $attendance_summary */
+/** @var array|null $created_by */
+/** @var string $fee_status */
+/** @var float $fee_paid */
 $activeNav = 'students';
 $student = $student ?? [
     'id' => 0,
@@ -63,7 +66,7 @@ $title = 'Student Details';
             align-items: center;
             gap: 20px;
             padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2f7f87 0%, #0d9488 100%);
             color: #fff;
             border-radius: 12px;
             margin-bottom: 30px;
@@ -229,12 +232,12 @@ $title = 'Student Details';
     <h2 class="section-title">Account Information</h2>
     <div class="detail-grid">
         <div class="detail-item">
-            <span class="detail-label">Student ID</span>
-            <div class="detail-value"><?php echo e((string) ($student['id'] ?? '')); ?></div>
-        </div>
-        <div class="detail-item">
             <span class="detail-label">Account Type</span>
             <div class="detail-value"><?php echo e($student['role'] ?? 'STUDENT'); ?></div>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Managed by</span>
+            <div class="detail-value"><?php echo e($created_by['role'] ?? 'System'); ?></div>
         </div>
         <div class="detail-item">
             <span class="detail-label">Account Created</span>
@@ -278,9 +281,9 @@ $title = 'Student Details';
             </div>
         </div>
         <div class="detail-item">
-            <span class="detail-label">Attendance Records</span>
+            <span class="detail-label">Fee Status</span>
             <div class="detail-value">
-                <?php echo e((string) ($attendance_summary['present'] ?? 0)); ?>/<?php echo e((string) ($attendance_summary['total'] ?? 0)); ?>
+                <?php echo e($fee_status ?? 'N/A'); ?>
             </div>
         </div>
     </div>

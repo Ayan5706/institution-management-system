@@ -137,14 +137,14 @@ function validate_semester_number(int $semester_num, int $program_duration_semes
 }
 
 /**
- * Validate phone number (basic: 7-20 digits, may include +, -, space)
+ * Validate phone number (exactly 10 digits)
  */
 function validate_phone(string $phone): ?string
 {
-    if (!preg_match('/^[\d+\-\s()]{7,20}$/', $phone)) {
-        return 'Invalid phone number format';
+    if (!preg_match('/^\d{10}$/', $phone)) {
+        return 'Phone number must be exactly 10 digits';
     }
-    
+
     return null;
 }
 

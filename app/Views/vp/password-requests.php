@@ -24,7 +24,9 @@ $pending_resets = $pending_resets ?? [];
             display: flex;
             gap: 12px;
             margin: 10px 0 18px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            align-items: center;
+            overflow-x: auto;
         }
 
         .filter-input {
@@ -33,6 +35,9 @@ $pending_resets = $pending_resets ?? [];
             border-radius: 6px;
             font-size: 0.95rem;
             background: #fff;
+            flex: 1;
+            min-width: 140px;
+            cursor: text;
         }
 
         .table-container {

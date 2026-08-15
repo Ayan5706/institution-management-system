@@ -1,6 +1,7 @@
 <?php
 /** @var array $teacher */
 /** @var array $assignments */
+/** @var array|null $created_by */
 $activeNav = 'teachers';
 $teacher = $teacher ?? [
     'id' => 0,
@@ -57,7 +58,7 @@ $title = 'Teacher Details';
             align-items: center;
             gap: 20px;
             padding: 20px;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: linear-gradient(135deg, #2f7f87 0%, #0d9488 100%);
             color: #fff;
             border-radius: 12px;
             margin-bottom: 30px;
@@ -223,12 +224,12 @@ $title = 'Teacher Details';
     <h2 class="section-title">Account Information</h2>
     <div class="detail-grid">
         <div class="detail-item">
-            <span class="detail-label">Teacher ID</span>
-            <div class="detail-value"><?php echo e((string) ($teacher['id'] ?? '')); ?></div>
-        </div>
-        <div class="detail-item">
             <span class="detail-label">Account Type</span>
             <div class="detail-value"><?php echo e($teacher['role'] ?? 'TEACHER'); ?></div>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Managed by</span>
+            <div class="detail-value"><?php echo e($created_by['role'] ?? 'System'); ?></div>
         </div>
         <div class="detail-item">
             <span class="detail-label">Account Created</span>

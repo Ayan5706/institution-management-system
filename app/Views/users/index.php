@@ -72,8 +72,16 @@ $users = $users ?? [
                         <td><span class="pill <?php echo strtolower((string) ($user['status'] ?? 'inactive')); ?>"><?php echo e((string) ($user['status'] ?? 'Inactive')); ?></span></td>
                         <td>
                             <div class="actions">
-                                <a class="action-link" href="<?php echo e(url('users/' . (string) ($user['id'] ?? 0))); ?>">View</a>
+                                <a class="view-btn" href="<?php echo e(url('users/' . (string) ($user['id'] ?? 0))); ?>">View</a>
                                 <a class="action-link" href="<?php echo e(url('users/' . (string) ($user['id'] ?? 0) . '/edit')); ?>">Edit</a>
+                                <?php if (!empty($user['can_resend_activation'])): ?>
+                                    <button
+                                        type="button"
+                                        class="action-link resend-activation"
+                                        data-user-id="<?php echo e((string) ($user['id'] ?? '')); ?>">
+                                        Resend Activation
+                                    </button>
+                                <?php endif; ?>
                             </div>
                         </td>
                     </tr>
@@ -91,6 +99,41 @@ $users = $users ?? [
     </div>
 
     <script>
+        const resendBaseUrl = '<?php echo e(url('users')); ?>';
+
+        document.querySelectorAll('.resend-activation').forEach((button) => {
+            button.addEventListener('click', async () => {
+                if (!confirm('Send a new activation email for this principal?')) {
+                    return;
+                }
+
+                const userId = button.dataset.userId;
+                if (!userId) {
+                    alert('Missing user id.');
+                    return;
+                }
+
+                button.disabled = true;
+
+                try {
+                    const response = await fetch(`${resendBaseUrl}/${userId}/resend-activation`, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    const data = await response.json().catch(() => ({}));
+                    alert(data.message || 'Activation email sent.');
+                } catch (error) {
+                    alert('Failed to send activation email.');
+                } finally {
+                    button.disabled = false;
+                }
+            });
+        });
+
         window.IMS = window.IMS || {};
         window.IMS.initTableView({
             tbodyId: 'usersTableBody',

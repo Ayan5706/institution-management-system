@@ -17,6 +17,7 @@ $isEdit = $method !== 'POST';
     }
     .span-2 { grid-column: span 2; }
     .form-actions { display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap; }
+    .inline-error { margin-top: 6px; font-size: 0.85rem; color: #dc2626; font-weight: 600; }
     @media (max-width: 720px) { .form-grid { grid-template-columns: 1fr; } .span-2 { grid-column: span 1; } }
 </style>
 
@@ -45,6 +46,7 @@ $isEdit = $method !== 'POST';
         <div class="field">
             <label for="phone">Phone</label>
             <input id="phone" name="phone" type="text" value="<?php echo e((string) ($user['phone'] ?? old('phone', ''))); ?>" placeholder="09xxxxxxxxx">
+            <div id="phone-error" class="inline-error" style="display: none;"></div>
         </div>
 
         <div class="field">
@@ -72,3 +74,36 @@ $isEdit = $method !== 'POST';
         <button class="btn btn-primary" type="submit"><?php echo $isEdit ? 'Update User' : 'Create User'; ?></button>
     </div>
 </form>
+
+<script>
+    const userForm = document.querySelector('form');
+    const phoneInput = document.getElementById('phone');
+    const phoneError = document.getElementById('phone-error');
+
+    function validatePhone(value) {
+        if (value !== '' && !/^\d{10}$/.test(value)) {
+            if (phoneError) {
+                phoneError.textContent = 'Phone number must be exactly 10 digits';
+                phoneError.style.display = 'block';
+            }
+            return false;
+        }
+        if (phoneError) {
+            phoneError.textContent = '';
+            phoneError.style.display = 'none';
+        }
+        return true;
+    }
+
+    if (phoneInput) {
+        phoneInput.addEventListener('input', () => {
+            validatePhone(phoneInput.value.trim());
+        });
+    }
+
+    userForm?.addEventListener('submit', (event) => {
+        if (!validatePhone((phoneInput?.value || '').trim())) {
+            event.preventDefault();
+        }
+    });
+</script>

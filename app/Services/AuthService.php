@@ -23,40 +23,49 @@ class AuthService
     /**
      * Authenticate user and generate tokens
      * Per spec Part 5.1 - login endpoint
+     * Only accepts login_id, not email.
      * 
-     * @param string $email User email
+     * @param string $loginId User login ID
      * @param string $password User password (plain text)
      * @return array ['success' => bool, 'user' => array, 'accessToken' => string, 'refreshToken' => string, 'error' => string]
      */
-    public function login(string $email, string $password): array
+    public function login(string $loginId, string $password): array
     {
         try {
             // Trim and validate inputs
-            $email = trim(strtolower($email));
+            $loginId = trim($loginId);
             $password = trim($password);
 
-            if (empty($email) || empty($password)) {
+            if (empty($loginId) || empty($password)) {
                 return [
                     'success' => false,
-                    'error' => 'Email and password are required'
+                    'error' => 'Login ID and password are required'
                 ];
             }
 
-            // Find user by email or login_id (support both)
+            // Reject if email address is provided
+            if (strpos($loginId, '@') !== false) {
+                return [
+                    'success' => false,
+                    'error' => 'Please enter your Login ID.'
+                ];
+            }
+
+            // Find user by login_id only
             $stmt = $this->db->prepare('
                 SELECT id, email, full_name, password_hash, role, is_active, must_change_password
                 FROM users
-                WHERE (email = ? OR login_id = ?) AND is_active = 1
+                WHERE BINARY login_id = ? AND is_active = 1
                 LIMIT 1
             ');
-            $stmt->execute([$email, $email]);
+            $stmt->execute([$loginId]);
             $user = $stmt->fetch(\PDO::FETCH_ASSOC);
 
             // User not found or inactive
             if (!$user) {
                 return [
                     'success' => false,
-                    'error' => 'Invalid email or password'
+                    'error' => 'Invalid login ID or password'
                 ];
             }
 
@@ -64,7 +73,7 @@ class AuthService
             if (!password_verify($password, $user['password_hash'])) {
                 return [
                     'success' => false,
-                    'error' => 'Invalid email or password'
+                    'error' => 'Invalid login ID or password'
                 ];
             }
 

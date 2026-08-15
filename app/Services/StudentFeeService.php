@@ -16,8 +16,8 @@ final class StudentFeeService
 {
     /**
      * Create fee records for a newly enrolled student
-     * Creates StudentFee rows for all currently active semesters (is_current=1) 
-     * in the student's program
+     * Creates StudentFee row for the LOWEST active semester (student's entry/current semester)
+     * This ensures students are in their appropriate semester level, not all active semesters
      * 
      * Must be called within a PDO transaction
      * Per Spec: "After PHP INSERTs a student_profile row..."
@@ -26,31 +26,35 @@ final class StudentFeeService
     {
         $db = Database::connection();
         
-        // Get all active semesters for this program
+        // Get the lowest active semester for this program (student's entry semester)
         $stmt = $db->prepare('
             SELECT id, fee_amount
             FROM semesters
             WHERE program_id = ? AND is_current = 1
+            ORDER BY semester_number ASC
+            LIMIT 1
         ');
         $stmt->execute([$program_id]);
-        $semesters = $stmt->fetchAll();
+        $semester = $stmt->fetch();
         
-        // Insert a fee record for each active semester
+        if (!$semester) {
+            return;
+        }
+        
+        // Insert fee record for the entry semester only
         $insert_stmt = $db->prepare('
             INSERT INTO student_fees (student_id, semester_id, amount_paid)
             VALUES (?, ?, \'0.00\')
             ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)
         ');
         
-        foreach ($semesters as $semester) {
-            $insert_stmt->execute([$student_id, $semester['id']]);
-        }
+        $insert_stmt->execute([$student_id, $semester['id']]);
     }
 
     /**
      * Create fee records for all active students when a semester is activated
-     * Creates StudentFee rows for all active students (is_active=1) 
-     * in the semester's program, IF no fee record already exists for that pair
+     * Creates StudentFee rows for students who don't yet have fees in any active semester
+     * of this program. This ensures students show up in only their current active semester.
      * 
      * Must be called within a PDO transaction
      * Per Spec: "When semester is activated (is_current set to 1)..."
@@ -60,7 +64,7 @@ final class StudentFeeService
         $db = Database::connection();
         
         // Get program_id from semester
-        $sem_stmt = $db->prepare('SELECT program_id FROM semesters WHERE id = ?');
+        $sem_stmt = $db->prepare('SELECT program_id, semester_number FROM semesters WHERE id = ?');
         $sem_stmt->execute([$semester_id]);
         $semester = $sem_stmt->fetch();
         
@@ -70,17 +74,25 @@ final class StudentFeeService
         
         $program_id = $semester['program_id'];
         
-        // Get all active students in this program
+        // Get active students in this program who don't already have fees in any active semester
         $student_stmt = $db->prepare('
-            SELECT sp.user_id
+            SELECT DISTINCT sp.user_id
             FROM student_profiles sp
             JOIN users u ON sp.user_id = u.id
-            WHERE sp.program_id = ? AND u.is_active = 1
+            WHERE sp.program_id = ?
+              AND u.is_active = 1
+              AND NOT EXISTS (
+                SELECT 1 FROM student_fees sf
+                JOIN semesters s ON sf.semester_id = s.id
+                WHERE sf.student_id = sp.user_id
+                  AND s.program_id = sp.program_id
+                  AND s.is_current = 1
+              )
         ');
         $student_stmt->execute([$program_id]);
         $students = $student_stmt->fetchAll();
         
-        // Insert fee record for each student IF it doesn't exist
+        // Insert fee record for each student in this semester
         $insert_stmt = $db->prepare('
             INSERT IGNORE INTO student_fees (student_id, semester_id, amount_paid)
             VALUES (?, ?, \'0.00\')

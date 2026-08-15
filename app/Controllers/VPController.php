@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Core\Database;
 use App\Models\ActivationTokenModel;
 use App\Models\EmailChangeRequestModel;
+use App\Models\EmailChangeVerificationModel;
 use App\Models\SystemConfigModel;
 use App\Models\UserModel;
 use App\Models\ProgramModel;
@@ -16,6 +17,7 @@ use App\Models\TeacherAssignmentModel;
 use App\Models\PasswordResetRequestModel;
 use App\Services\MailService;
 use App\Services\SemesterService;
+use App\Services\StudentFeeService;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
@@ -25,6 +27,7 @@ class VPController extends BaseController
     private UserModel $userModel;
     private ActivationTokenModel $activationTokens;
     private EmailChangeRequestModel $emailChangeRequests;
+    private EmailChangeVerificationModel $emailChangeVerifications;
     private ProgramModel $programModel;
     private SemesterModel $semesterModel;
     private SubjectModel $subjectModel;
@@ -39,6 +42,7 @@ class VPController extends BaseController
         $this->userModel = new UserModel();
         $this->activationTokens = new ActivationTokenModel();
         $this->emailChangeRequests = new EmailChangeRequestModel();
+        $this->emailChangeVerifications = new EmailChangeVerificationModel();
         $this->programModel = new ProgramModel();
         $this->semesterModel = new SemesterModel();
         $this->subjectModel = new SubjectModel();
@@ -57,6 +61,14 @@ class VPController extends BaseController
     {
         $stats = $this->getDashboardStats();
         $pendingResets = $this->getTeacherPendingResets();
+        $pendingEmailChanges = [];
+        $pendingEmailRequests = $this->emailChangeRequests->where('status', 'PENDING');
+        foreach ($pendingEmailRequests as $request) {
+            $user = $this->userModel->find((int) ($request['user_id'] ?? 0));
+            if ($user && $user['role'] === 'TEACHER') {
+                $pendingEmailChanges[] = $request;
+            }
+        }
         $academicSeries = $this->getAcademicSeries();
         $facultyPercent = $this->getFacultyUtilizationPercent();
 
@@ -66,6 +78,7 @@ class VPController extends BaseController
             'user_role' => 'VP',
             'stats' => $stats,
             'pending_resets' => $pendingResets,
+            'pending_email_changes' => $pendingEmailChanges,
             'academic_series' => $academicSeries,
             'faculty_percent' => $facultyPercent,
         ]);
@@ -92,11 +105,22 @@ class VPController extends BaseController
             }
         }
 
+        // Count pending email change requests from teachers only
+        $allEmailRequests = $this->emailChangeRequests->where('status', 'PENDING');
+        $pendingEmailCount = 0;
+        foreach ($allEmailRequests as $request) {
+            $user = $this->userModel->find((int) ($request['user_id'] ?? 0));
+            if ($user && $user['role'] === 'TEACHER') {
+                $pendingEmailCount++;
+            }
+        }
+
         return [
             'total_programs' => $totalPrograms,
             'current_semesters' => $currentSemesters,
             'total_teachers' => $totalTeachers,
             'pending_resets' => $pendingCount,
+            'pending_email_changes' => $pendingEmailCount,
         ];
     }
 
@@ -205,12 +229,19 @@ class VPController extends BaseController
         }
 
         $emailRequestPending = $this->emailChangeRequests->hasPendingForUser($userId);
+        $emailVerification = $this->emailChangeVerifications->getActiveForUser($userId);
+        $emailVerificationPending = $emailVerification !== null;
+        $emailVerificationEmail = $emailVerificationPending ? (string) ($emailVerification['new_email'] ?? '') : '';
+        $emailVerificationExpiresAt = $emailVerificationPending ? (string) ($emailVerification['expires_at'] ?? '') : '';
 
         $this->view('vp.profile', [
             'title' => 'My Profile',
             'pageSubtitle' => 'Manage your profile details',
             'user' => $user,
             'email_request_pending' => $emailRequestPending,
+            'email_verification_pending' => $emailVerificationPending,
+            'email_verification_email' => $emailVerificationEmail,
+            'email_verification_expires_at' => $emailVerificationExpiresAt,
         ]);
     }
 
@@ -235,8 +266,13 @@ class VPController extends BaseController
             return;
         }
 
-        if ($phone !== '' && !preg_match('/^\d+$/', $phone)) {
-            $this->json(['success' => false, 'message' => 'Phone number must contain digits only.'], 422);
+        if (!preg_match('/^[A-Za-z\s]+$/', $fullName)) {
+            $this->json(['success' => false, 'message' => 'Full name must contain letters only.'], 422);
+            return;
+        }
+
+        if ($phone !== '' && !preg_match('/^\d{10}$/', $phone)) {
+            $this->json(['success' => false, 'message' => 'Phone number must be exactly 10 digits.'], 422);
             return;
         }
 
@@ -288,7 +324,7 @@ class VPController extends BaseController
         }
 
         if (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
-            $this->json(['success' => false, 'message' => 'Please enter a valid email address.'], 422);
+            $this->json(['success' => false, 'message' => 'Please enter a valid email'], 422);
             return;
         }
 
@@ -309,6 +345,132 @@ class VPController extends BaseController
             return;
         }
 
+        $this->emailChangeVerifications->clearActiveForUser($userId);
+
+        $otp = (string) random_int(100000, 999999);
+        $otpHash = hash('sha256', $otp);
+        $expiresAt = gmdate('Y-m-d H:i:s', time() + 600);
+
+        $this->emailChangeVerifications->create([
+            'user_id' => $userId,
+            'new_email' => $newEmail,
+            'otp_hash' => $otpHash,
+            'expires_at' => $expiresAt,
+            'verified_at' => null,
+            'created_at' => gmdate('Y-m-d H:i:s'),
+        ]);
+
+        try {
+            $name = (string) ($user['full_name'] ?? 'User');
+            $subject = 'Verify Your New Email - IMS';
+            $htmlBody = '<p>Hello ' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . ',</p>'
+                . '<p>Use the OTP below to verify your new email address for your account.</p>'
+                . '<p><strong>OTP: ' . htmlspecialchars($otp, ENT_QUOTES, 'UTF-8') . '</strong></p>'
+                . '<p>This OTP expires in 10 minutes.</p>'
+                . '<p>If you did not request this change, please ignore this email.</p>'
+                . '<p>— IMS Admin</p>';
+            $textBody = "Hello {$name},\n\n"
+                . "Use the OTP below to verify your new email address:\n"
+                . "OTP: {$otp}\n\n"
+                . "This OTP expires in 10 minutes.\n\n"
+                . "If you did not request this change, please ignore this email.\n\n"
+                . "— IMS Admin";
+            $this->mailService->sendMail($newEmail, $subject, $htmlBody, $textBody);
+        } catch (\Throwable $e) {
+            $this->emailChangeVerifications->clearActiveForUser($userId);
+            $this->json(['success' => false, 'message' => 'Unable to send OTP. Please try again later.'], 500);
+            return;
+        }
+
+        $this->json([
+            'success' => true,
+            'message' => 'OTP sent to your new email. Enter it to verify and submit your request.',
+        ]);
+    }
+
+    public function verifyEmailChangeOtp(): void
+    {
+        $userId = (int) ($_SESSION['user_id'] ?? 0);
+        if ($userId === 0) {
+            $this->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            return;
+        }
+
+        $user = $this->userModel->find($userId);
+        if (!$user || strtoupper((string) ($user['role'] ?? '')) !== 'VP') {
+            $this->json(['success' => false, 'message' => 'Forbidden'], 403);
+            return;
+        }
+
+        if ($this->emailChangeRequests->hasPendingForUser($userId)) {
+            $this->json(['success' => false, 'message' => 'You already have a pending email change request.'], 409);
+            return;
+        }
+
+        $newEmail = trim((string) $this->input('new_email', ''));
+        $otp = trim((string) $this->input('email_otp', ''));
+
+        if ($newEmail === '' || $otp === '') {
+            $this->json(['success' => false, 'message' => 'New email and OTP are required.'], 422);
+            return;
+        }
+
+        if (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
+            $this->json(['success' => false, 'message' => 'Please enter a valid email'], 422);
+            return;
+        }
+
+        if (!preg_match('/^\d{6}$/', $otp)) {
+            $this->json(['success' => false, 'message' => 'OTP must be a 6-digit code.'], 422);
+            return;
+        }
+
+        $currentEmail = (string) ($user['email'] ?? '');
+        if ($currentEmail !== '' && strcasecmp($currentEmail, $newEmail) === 0) {
+            $this->json(['success' => false, 'message' => 'New email must be different from the current email.'], 422);
+            return;
+        }
+
+        $existing = $this->userModel->firstWhere('email', $newEmail);
+        if ($existing) {
+            $this->json(['success' => false, 'message' => 'That email address is already in use.'], 409);
+            return;
+        }
+
+        $verification = $this->emailChangeVerifications->getActiveForUser($userId);
+        if (!$verification) {
+            $this->json(['success' => false, 'message' => 'No active OTP found. Please request a new OTP.'], 404);
+            return;
+        }
+
+        $verificationEmail = (string) ($verification['new_email'] ?? '');
+        if ($verificationEmail === '' || strcasecmp($verificationEmail, $newEmail) !== 0) {
+            $this->json(['success' => false, 'message' => 'OTP does not match the requested email. Please request a new OTP.'], 409);
+            return;
+        }
+
+        $expiresAtRaw = (string) ($verification['expires_at'] ?? '');
+        $expiresAt = null;
+        if ($expiresAtRaw !== '') {
+            $expiresAt = (new DateTimeImmutable($expiresAtRaw, new DateTimeZone('UTC')))->getTimestamp();
+        }
+
+        if ($expiresAt !== null && $expiresAt < time()) {
+            $this->emailChangeVerifications->clearActiveForUser($userId);
+            $this->json(['success' => false, 'message' => 'OTP has expired. Please request a new OTP.'], 410);
+            return;
+        }
+
+        $otpHash = hash('sha256', $otp);
+        if (!hash_equals((string) ($verification['otp_hash'] ?? ''), $otpHash)) {
+            $this->json(['success' => false, 'message' => 'Invalid OTP. Please try again.'], 422);
+            return;
+        }
+
+        $this->emailChangeVerifications->updateById((int) $verification['id'], [
+            'verified_at' => gmdate('Y-m-d H:i:s'),
+        ]);
+
         $this->emailChangeRequests->create([
             'user_id' => $userId,
             'new_email' => $newEmail,
@@ -318,7 +480,7 @@ class VPController extends BaseController
 
         $this->json([
             'success' => true,
-            'message' => 'Email change request submitted for principal approval.',
+            'message' => 'Email verified. Your request is pending principal approval.',
         ]);
     }
 
@@ -358,7 +520,8 @@ class VPController extends BaseController
                 'semester_number' => $sem['semester_number'],
                 'academic_year' => $sem['academic_year'],
                 'is_current' => $sem['is_current'],
-                'fee_amount' => $sem['fee_amount'],
+                'start_date' => $sem['start_date'] ?? null,
+                'end_date' => $sem['end_date'] ?? null,
             ];
             
             // Add computed term using helper
@@ -366,11 +529,50 @@ class VPController extends BaseController
             $semesters[] = $enriched;
         }
 
+        usort($semesters, static function (array $a, array $b): int {
+            return (int) ($a['id'] ?? 0) <=> (int) ($b['id'] ?? 0);
+        });
+
         $this->view('vp.semesters', [
             'title' => 'Semesters',
             'programs' => $programs,
             'semesters' => $semesters,
         ]);
+    }
+
+    public function toggleSemesterTerm(): void
+    {
+        $data = json_decode((string) file_get_contents('php://input'), true);
+
+        if (!is_array($data)) {
+            $this->json(['success' => false, 'message' => 'Invalid JSON request.'], 400);
+            return;
+        }
+
+        $programId = (int) ($data['program_id'] ?? 0);
+        $term = strtolower(trim((string) ($data['term'] ?? '')));
+
+        if ($programId <= 0 || ($term !== 'odd' && $term !== 'even')) {
+            $this->json(['success' => false, 'message' => 'program_id and term (odd/even) are required.'], 422);
+            return;
+        }
+
+        $program = $this->programModel->find($programId);
+        if (!$program) {
+            $this->json(['success' => false, 'message' => 'Program not found.'], 404);
+            return;
+        }
+
+        try {
+            $result = $this->applyTermActivation($programId, $term);
+            $this->json([
+                'success' => true,
+                'message' => ucfirst($term) . ' semesters activated successfully.',
+                'data' => $result,
+            ]);
+        } catch (\Throwable $e) {
+            $this->json(['success' => false, 'message' => 'Failed to activate semesters: ' . $e->getMessage()], 500);
+        }
     }
 
     // ============================================================================
@@ -384,7 +586,7 @@ class VPController extends BaseController
             SELECT sem.*, p.program_name
             FROM semesters sem
             JOIN programs p ON sem.program_id = p.id
-            ORDER BY sem.academic_year DESC, sem.semester_number DESC
+            ORDER BY sem.id ASC
         ')->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         $subjects = $db->query('
@@ -403,7 +605,7 @@ class VPController extends BaseController
             JOIN programs p ON sem.program_id = p.id
             LEFT JOIN teacher_assignments ta ON ta.subject_id = su.id
             LEFT JOIN users u ON ta.teacher_id = u.id
-            ORDER BY p.program_name, sem.semester_number, su.subject_name
+            ORDER BY su.id ASC
         ')->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         $subjectTypes = [];
@@ -459,6 +661,53 @@ class VPController extends BaseController
         ]);
     }
 
+    public function showTeacherDetail(int $id): void
+    {
+        $user = $this->userModel->find($id);
+
+        if (!$user || $user['role'] !== 'TEACHER') {
+            http_response_code(404);
+            echo 'Teacher not found';
+            return;
+        }
+
+        $assignments = $this->assignmentModel->where('teacher_id', $id);
+        $assignmentDetails = [];
+
+        foreach ($assignments as $assignment) {
+            $subject = $this->subjectModel->find((int) ($assignment['subject_id'] ?? 0));
+            if (!$subject) {
+                continue;
+            }
+
+            $semester = $this->semesterModel->find((int) ($subject['semester_id'] ?? 0));
+            $program = $semester ? $this->programModel->find((int) ($semester['program_id'] ?? 0)) : null;
+
+            $assignmentDetails[] = [
+                'subject_code' => $subject['subject_code'] ?? 'N/A',
+                'subject_name' => $subject['subject_name'] ?? 'N/A',
+                'semester_number' => $semester['semester_number'] ?? null,
+                'academic_year' => $semester['academic_year'] ?? null,
+                'program_name' => $program['program_name'] ?? null,
+                'program_code' => $program['program_code'] ?? null,
+            ];
+        }
+
+        // Get who created this teacher account
+        $createdBy = null;
+        $createdById = (int) ($user['created_by'] ?? 0);
+        if ($createdById > 0) {
+            $createdBy = $this->userModel->find($createdById);
+        }
+
+        $this->view('vp.teacher-detail', [
+            'title' => 'Teacher Details',
+            'teacher' => $user,
+            'assignments' => $assignmentDetails,
+            'created_by' => $createdBy,
+        ]);
+    }
+
     // ============================================================================
     // ASSIGNMENTS MANAGEMENT
     // ============================================================================
@@ -486,14 +735,31 @@ class VPController extends BaseController
             JOIN subjects su ON ta.subject_id = su.id
             JOIN semesters sem ON su.semester_id = sem.id
             JOIN programs p ON sem.program_id = p.id
-            ORDER BY p.program_name, sem.semester_number, su.subject_name
+            ORDER BY ta.id ASC
         ');
 
         $assignments = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         // Get all teachers and subjects for dropdown
         $teachers = $this->userModel->where('role', 'TEACHER');
-        $subjects = $this->subjectModel->all('subject_name', 'ASC');
+
+        $stmt = $db->query('
+            SELECT
+                su.id,
+                su.subject_name,
+                su.subject_code,
+                su.semester_id,
+                sem.semester_number,
+                sem.academic_year,
+                p.id AS program_id,
+                p.program_name
+            FROM subjects su
+            JOIN semesters sem ON su.semester_id = sem.id
+            JOIN programs p ON sem.program_id = p.id
+            ORDER BY su.id ASC
+        ');
+
+        $subjects = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         $this->view('vp.assignments', [
             'title' => 'Subject Assignments',
@@ -559,15 +825,22 @@ class VPController extends BaseController
 
         // Get all teacher assignments for dropdown
         $stmt = $db->query('
-            SELECT 
+            SELECT
                 ta.id,
-                u.full_name as teacher_name,
+                u.full_name AS teacher_name,
                 su.subject_name,
-                su.subject_code
+                su.subject_code,
+                sem.id AS semester_id,
+                sem.semester_number,
+                sem.academic_year,
+                p.id AS program_id,
+                p.program_name
             FROM teacher_assignments ta
             JOIN users u ON ta.teacher_id = u.id
             JOIN subjects su ON ta.subject_id = su.id
-            ORDER BY u.full_name, su.subject_name
+            JOIN semesters sem ON su.semester_id = sem.id
+            JOIN programs p ON sem.program_id = p.id
+            ORDER BY ta.id ASC
         ');
         $assignments = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
@@ -727,20 +1000,50 @@ class VPController extends BaseController
 
     public function createSemester(): void
     {
-        $data = json_decode((string) file_get_contents('php://input'), true);
+        $input = (string) file_get_contents('php://input');
+        $data = json_decode($input, true);
 
-        if (empty($data['program_id']) || empty($data['semester_number']) || empty($data['academic_year'])) {
-            $this->json(['success' => false, 'message' => 'Missing required fields: program_id, semester_number, academic_year'], 400);
+        // Check for JSON parsing errors
+        if ($data === null) {
+            $jsonError = json_last_error_msg();
+            $this->json(['success' => false, 'message' => 'Invalid JSON: ' . $jsonError], 400);
             return;
         }
 
-        $programId      = (int) $data['program_id'];
-        $semesterNumber = (int) $data['semester_number'];
-        $academicYear   = (string) $data['academic_year'];
+        if (empty($data['program_id']) || empty($data['semester_number']) || empty($data['start_date']) || empty($data['end_date']) || empty($data['start_academic_year']) || empty($data['end_academic_year'])) {
+            $this->json(['success' => false, 'message' => 'Missing required fields: program_id, semester_number, start_date, end_date, start_academic_year, end_academic_year'], 400);
+            return;
+        }
 
-        // Spec: validate academic_year format YYYY-YYYY and year2 == year1 + 1
-        if (!preg_match('/^(\d{4})-(\d{4})$/', $academicYear, $m) || (int)$m[2] !== (int)$m[1] + 1) {
-            $this->json(['success' => false, 'message' => 'academic_year must be in YYYY-YYYY format where second year = first + 1'], 400);
+        $programId           = (int) $data['program_id'];
+        $semesterNumber      = (int) $data['semester_number'];
+        $startDate           = (string) $data['start_date'];
+        $endDate             = (string) $data['end_date'];
+        $startAcademicYear   = (int) $data['start_academic_year'];
+        $endAcademicYear     = (int) $data['end_academic_year'];
+
+        // Validate program period years
+        if ($startAcademicYear >= $endAcademicYear) {
+            $this->json(['success' => false, 'message' => 'Program start year must be before end year'], 400);
+            return;
+        }
+
+        if ($startAcademicYear < 2000 || $endAcademicYear > 2099) {
+            $this->json(['success' => false, 'message' => 'Years must be between 2000 and 2099'], 400);
+            return;
+        }
+
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $startDate) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $endDate)) {
+            $this->json(['success' => false, 'message' => 'start_date and end_date must be in YYYY-MM-DD format'], 400);
+            return;
+        }
+
+        // Validate dates
+        $startTimestamp = strtotime($startDate);
+        $endTimestamp = strtotime($endDate);
+        
+        if ($startTimestamp === false || $endTimestamp === false || $startTimestamp > $endTimestamp) {
+            $this->json(['success' => false, 'message' => 'Semester end date must be after the start date'], 400);
             return;
         }
 
@@ -756,13 +1059,18 @@ class VPController extends BaseController
         }
 
         // Spec: CRITICAL - is_current NEVER set on INSERT. Only via /activate endpoint.
-        // Spec: fee_amount NULL by default (not configured yet)
+        // Fee amount is managed by Accountant role only
+        // Academic year is managed by program period (start_academic_year - end_academic_year)
+        // Dates are received in YYYY-MM-DD format from HTML5 date input
         $newId = $this->semesterModel->create([
-            'program_id'      => $programId,
-            'semester_number' => $semesterNumber,
-            'academic_year'   => $academicYear,
-            'is_current'      => 0,
-            'fee_amount'      => null,
+            'program_id'           => $programId,
+            'semester_number'      => $semesterNumber,
+            'academic_year'        => $startAcademicYear . '-' . $endAcademicYear,
+            'is_current'           => 0,
+            'start_date'           => $startDate,
+            'end_date'             => $endDate,
+            'start_academic_year'  => $startAcademicYear,
+            'end_academic_year'    => $endAcademicYear,
         ]);
 
         if ($newId) {
@@ -781,14 +1089,82 @@ class VPController extends BaseController
             return;
         }
 
-        try {
-            // Use SemesterService to handle activation with transaction and auto-fee creation
-            // Per spec Part 3 Table 4 and Table 9 FLOW section 2
-            $this->semesterService->activate($id);
+        $term = (((int) ($semester['semester_number'] ?? 0) % 2) === 1) ? 'odd' : 'even';
+        $programId = (int) ($semester['program_id'] ?? 0);
 
-            $this->json(['success' => true, 'message' => 'Semester activated successfully']);
-        } catch (\Exception $e) {
+        try {
+            $result = $this->applyTermActivation($programId, $term);
+            $this->json([
+                'success' => true,
+                'message' => ucfirst($term) . ' semesters activated successfully.',
+                'data' => $result,
+            ]);
+        } catch (\Throwable $e) {
             $this->json(['success' => false, 'message' => 'Failed to activate semester: ' . $e->getMessage()], 500);
+        }
+    }
+
+    private function applyTermActivation(int $programId, string $term): array
+    {
+        $parity = $term === 'odd' ? 1 : 0;
+        $oppositeParity = $parity === 1 ? 0 : 1;
+        $db = Database::connection();
+
+        $db->beginTransaction();
+        try {
+            $deactivate = $db->prepare('
+                UPDATE semesters
+                SET is_current = 0
+                WHERE program_id = :program_id AND MOD(semester_number, 2) = :parity
+            ');
+            $deactivate->execute([
+                'program_id' => $programId,
+                'parity' => $oppositeParity,
+            ]);
+
+            $select = $db->prepare('
+                SELECT id, is_current
+                FROM semesters
+                WHERE program_id = :program_id AND MOD(semester_number, 2) = :parity
+            ');
+            $select->execute([
+                'program_id' => $programId,
+                'parity' => $parity,
+            ]);
+            $targetSemesters = $select->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            if (empty($targetSemesters)) {
+                throw new \RuntimeException('No ' . $term . ' semesters found for this program.');
+            }
+
+            $activate = $db->prepare('
+                UPDATE semesters
+                SET is_current = 1
+                WHERE program_id = :program_id AND MOD(semester_number, 2) = :parity
+            ');
+            $activate->execute([
+                'program_id' => $programId,
+                'parity' => $parity,
+            ]);
+
+            $activatedCount = 0;
+            foreach ($targetSemesters as $semester) {
+                if ((int) ($semester['is_current'] ?? 0) !== 1) {
+                    StudentFeeService::createFeesOnSemesterActivation((int) $semester['id']);
+                    $activatedCount++;
+                }
+            }
+
+            $db->commit();
+
+            return [
+                'activated' => $activatedCount,
+                'total' => count($targetSemesters),
+                'term' => $term,
+            ];
+        } catch (\Throwable $e) {
+            $db->rollBack();
+            throw $e;
         }
     }
 
@@ -830,12 +1206,16 @@ class VPController extends BaseController
     {
         $data = json_decode((string) file_get_contents('php://input'), true);
 
-        if (empty($data['login_id']) || empty($data['full_name'])) {
-            $this->json(['success' => false, 'message' => 'Missing required fields: login_id, full_name'], 400);
+        if (empty($data['full_name'])) {
+            $this->json(['success' => false, 'message' => 'Missing required fields: full_name'], 400);
             return;
         }
 
-        $loginId = (string) $data['login_id'];
+        $loginId = $this->generateNextTeacherLoginId();
+        if ($loginId === '') {
+            $this->json(['success' => false, 'message' => 'Unable to generate a new Staff ID.'], 500);
+            return;
+        }
         $email = (string) ($data['email'] ?? '');
 
         if ($email === '') {
@@ -844,7 +1224,7 @@ class VPController extends BaseController
         }
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $this->json(['success' => false, 'message' => 'Please enter a valid email address.'], 422);
+            $this->json(['success' => false, 'message' => 'Please enter a valid email'], 422);
             return;
         }
 
@@ -893,7 +1273,7 @@ class VPController extends BaseController
             ]);
 
             $activationLink = url('activate/' . $token);
-            $subject = 'Activate your EduHub account';
+            $subject = 'Activate your IMS account';
             $htmlBody = sprintf(
                 '<p>Hello %s,</p><p>Your TEACHER account has been created. Please activate your account using the link below (valid for 24 hours):</p><p><a href="%s">Activate Account</a></p><p>Login ID: <strong>%s</strong></p><p>If you did not expect this email, please contact support.</p>',
                 e((string) $data['full_name']),
@@ -917,6 +1297,87 @@ class VPController extends BaseController
                 $this->userModel->deleteById((int) $newId);
             }
             $this->json(['success' => false, 'message' => 'Failed to create teacher: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function getNextTeacherLoginId(): void
+    {
+        $loginId = $this->generateNextTeacherLoginId();
+
+        if ($loginId === '') {
+            $this->json([
+                'success' => false,
+                'message' => 'Unable to generate login ID.',
+            ], 500);
+            return;
+        }
+
+        $this->json([
+            'success' => true,
+            'data' => ['login_id' => $loginId],
+        ]);
+    }
+
+    private function generateNextTeacherLoginId(): string
+    {
+        $teachers = $this->userModel->where('role', 'TEACHER');
+
+        $prefixStats = [];
+        foreach ($teachers as $teacher) {
+            $loginId = strtoupper(trim((string) ($teacher['login_id'] ?? '')));
+            if ($loginId === '') {
+                continue;
+            }
+
+            if (!preg_match('/^([A-Z]+)(\d+)$/', $loginId, $matches)) {
+                continue;
+            }
+
+            $prefix = $matches[1];
+            $number = (int) $matches[2];
+            $width = strlen($matches[2]);
+
+            if (!isset($prefixStats[$prefix])) {
+                $prefixStats[$prefix] = ['count' => 0, 'max' => 0, 'width' => $width];
+            }
+
+            $prefixStats[$prefix]['count']++;
+            if ($number > $prefixStats[$prefix]['max']) {
+                $prefixStats[$prefix]['max'] = $number;
+            }
+            if ($width > $prefixStats[$prefix]['width']) {
+                $prefixStats[$prefix]['width'] = $width;
+            }
+        }
+
+        $prefix = 'STAFF';
+        $maxNumber = 0;
+        $width = 3;
+
+        foreach ($prefixStats as $candidate => $stats) {
+            if (
+                $stats['count'] > ($prefixStats[$prefix]['count'] ?? 0)
+                || ($stats['count'] === ($prefixStats[$prefix]['count'] ?? 0) && $stats['max'] > $maxNumber)
+            ) {
+                $prefix = $candidate;
+                $maxNumber = $stats['max'];
+                $width = $stats['width'];
+            }
+        }
+
+        if (isset($prefixStats[$prefix])) {
+            $maxNumber = $prefixStats[$prefix]['max'];
+            $width = $prefixStats[$prefix]['width'];
+        }
+
+        $nextNumber = $maxNumber + 1;
+
+        while (true) {
+            $candidate = sprintf('%s%0' . $width . 'd', $prefix, $nextNumber);
+            if (!$this->userModel->firstWhere('login_id', $candidate)) {
+                return $candidate;
+            }
+            $nextNumber++;
         }
     }
 
@@ -1038,6 +1499,11 @@ class VPController extends BaseController
             return;
         }
 
+        if (($endMinutes - $startMinutes) < 60) {
+            $this->json(['success' => false, 'message' => 'Class duration must be at least 1 hour'], 400);
+            return;
+        }
+
         if ($minStart !== null && $startMinutes < $minStart) {
             $this->json(['success' => false, 'message' => 'Start time must be within configured day hours.'], 400);
             return;
@@ -1117,6 +1583,207 @@ class VPController extends BaseController
         } else {
             $this->json(['success' => false, 'message' => 'Failed to delete timetable entry'], 500);
         }
+    }
+
+    // ============================================================================
+    // EMAIL CHANGE REQUESTS
+    // ============================================================================
+
+    public function showEmailChangeRequests(): void
+    {
+        $pendingRequests = [];
+        $requests = $this->emailChangeRequests->where('status', 'PENDING');
+        foreach ($requests as $request) {
+            $user = $this->userModel->find((int) ($request['user_id'] ?? 0));
+            if ($user && $user['role'] === 'TEACHER') {
+                $pendingRequests[] = $request;
+            }
+        }
+        $this->view('vp.email-requests', [
+            'title' => 'Email Change Requests',
+            'pageSubtitle' => 'Approve email change requests',
+            'pending_requests' => $pendingRequests,
+        ]);
+    }
+
+    public function approveEmailChange(int $id): void
+    {
+        $request = $this->emailChangeRequests->find($id);
+
+        if (!$request) {
+            $this->json(['success' => false, 'message' => 'Request not found.'], 404);
+            return;
+        }
+
+        if ($request['status'] !== 'PENDING') {
+            $this->json(['success' => false, 'message' => 'This request has already been processed.'], 409);
+            return;
+        }
+
+        $userId = (int) ($request['user_id'] ?? 0);
+        $user = $this->userModel->find($userId);
+        if (!$user || $user['role'] !== 'TEACHER') {
+            $this->json(['success' => false, 'message' => 'Invalid email change request.'], 403);
+            return;
+        }
+
+        $newEmail = (string) ($request['new_email'] ?? '');
+        if ($newEmail === '') {
+            $this->json(['success' => false, 'message' => 'New email is missing.'], 422);
+            return;
+        }
+
+        $existing = $this->userModel->firstWhere('email', $newEmail);
+        if ($existing && (int) $existing['id'] !== $userId) {
+            $this->json(['success' => false, 'message' => 'Email already in use.'], 409);
+            return;
+        }
+
+        try {
+            $this->userModel->updateById($userId, ['email' => $newEmail]);
+
+            $this->emailChangeRequests->updateById($id, [
+                'status' => 'APPROVED',
+                'resolved_by' => (int) ($_SESSION['user_id'] ?? 0),
+                'resolved_at' => date('Y-m-d H:i:s'),
+            ]);
+
+            $name = (string) ($user['full_name'] ?? 'User');
+            $subject = 'Email Change Approved - IMS';
+            $htmlBody = '<p>Hello ' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . ',</p>'
+                . '<p>Your email change request has been approved by the Vice Principal.</p>'
+                . '<p>Your new email address is: <strong>' . htmlspecialchars($newEmail, ENT_QUOTES, 'UTF-8') . '</strong></p>'
+                . '<p>If you did not request this change, please contact support immediately.</p>'
+                . '<p>— IMS Admin</p>';
+            $textBody = "Hello {$name},\n\n"
+                . "Your email change request has been approved by the Vice Principal.\n"
+                . "Your new email address is: {$newEmail}\n\n"
+                . "If you did not request this change, please contact support immediately.\n\n"
+                . "— IMS Admin";
+            $this->mailService->sendMail($newEmail, $subject, $htmlBody, $textBody);
+
+            $this->json([
+                'success' => true,
+                'message' => 'Email change approved and updated.',
+                'data' => ['user_email' => $newEmail],
+            ]);
+        } catch (\Throwable $e) {
+            $this->json(['success' => false, 'message' => 'Error approving email change.'], 500);
+        }
+    }
+
+    public function rejectEmailChange(int $id): void
+    {
+        $request = $this->emailChangeRequests->find($id);
+
+        if (!$request) {
+            $this->json(['success' => false, 'message' => 'Request not found.'], 404);
+            return;
+        }
+
+        if ($request['status'] !== 'PENDING') {
+            $this->json(['success' => false, 'message' => 'This request has already been processed.'], 409);
+            return;
+        }
+
+        $userId = (int) ($request['user_id'] ?? 0);
+        $user = $this->userModel->find($userId);
+        if (!$user || $user['role'] !== 'TEACHER') {
+            $this->json(['success' => false, 'message' => 'Invalid email change request.'], 403);
+            return;
+        }
+
+        try {
+            $this->emailChangeRequests->updateById($id, [
+                'status' => 'EXPIRED',
+                'resolved_by' => (int) ($_SESSION['user_id'] ?? 0),
+                'resolved_at' => date('Y-m-d H:i:s'),
+            ]);
+
+            $newEmail = (string) ($request['new_email'] ?? '');
+            $recipient = $newEmail !== '' ? $newEmail : (string) ($user['email'] ?? '');
+            if ($recipient !== '') {
+                $name = (string) ($user['full_name'] ?? 'User');
+                $subject = 'Email Change Rejected - IMS';
+                $htmlBody = '<p>Hello ' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . ',</p>'
+                    . '<p>Your email change request has been rejected by the Vice Principal.</p>'
+                    . '<p>If you believe this is a mistake, please contact support.</p>'
+                    . '<p>— IMS Admin</p>';
+                $textBody = "Hello {$name},\n\n"
+                    . "Your email change request has been rejected by the Vice Principal.\n"
+                    . "If you believe this is a mistake, please contact support.\n\n"
+                    . "— IMS Admin";
+                $this->mailService->sendMail($recipient, $subject, $htmlBody, $textBody);
+            }
+
+            $this->json(['success' => true, 'message' => 'Email change request rejected.']);
+        } catch (\Throwable $e) {
+            $this->json(['success' => false, 'message' => 'Error rejecting email change.'], 500);
+        }
+    }
+
+    // ============================================================================
+    // API ENDPOINTS
+    // ============================================================================
+
+    public function apiDashboard(): void
+    {
+        $stats = $this->getDashboardStats();
+
+        $this->json([
+            'success' => true,
+            'data' => $stats,
+        ]);
+    }
+
+    public function apiGetPasswordResets(): void
+    {
+        $pendingResets = $this->resetModel->where('status', 'PENDING');
+
+        // Filter for teacher requests only
+        $resets = [];
+        foreach ($pendingResets as $reset) {
+            $user = $this->userModel->find((int) $reset['requested_by']);
+            if ($user && $user['role'] === 'TEACHER') {
+                $reset['user_name'] = $user['full_name'];
+                $reset['user_email'] = $user['email'];
+                $reset['user_role'] = $user['role'];
+                $resets[] = $reset;
+            }
+        }
+
+        $this->json([
+            'success' => true,
+            'data' => $resets,
+        ]);
+    }
+
+    public function apiGetEmailChangeRequests(): void
+    {
+        $pendingRequests = $this->emailChangeRequests->where('status', 'PENDING');
+        $requests = [];
+
+        foreach ($pendingRequests as $request) {
+            $user = $this->userModel->find((int) ($request['user_id'] ?? 0));
+            if (!$user || $user['role'] !== 'TEACHER') {
+                continue;
+            }
+
+            $requests[] = [
+                'id' => $request['id'],
+                'user_id' => $request['user_id'],
+                'user_name' => $user['full_name'] ?? 'N/A',
+                'user_role' => $user['role'] ?? 'N/A',
+                'current_email' => $user['email'] ?? 'N/A',
+                'requested_email' => $request['new_email'] ?? 'N/A',
+                'created_at' => $request['created_at'] ?? null,
+            ];
+        }
+
+        $this->json([
+            'success' => true,
+            'data' => $requests,
+        ]);
     }
 
     // ============================================================================

@@ -15,6 +15,9 @@ $semester_numbers = array_values(array_unique($semester_numbers));
 sort($semester_numbers);
 ?>
 <?php ob_start(); ?>
+<!-- Flatpickr CSS and JS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <div class="card content-card">
     <div class="toolbar">
         <div>
@@ -31,6 +34,71 @@ sort($semester_numbers);
             align-items: center;
             flex-wrap: wrap;
             gap: 10px;
+        }
+
+        .date-picker-wrapper {
+            position: relative;
+            display: block;
+        }
+
+        .date-picker-wrapper input[type="date"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            background: #fff;
+            color: #0f172a;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .date-picker-wrapper input[type="date"]:hover {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+        }
+
+        .date-picker-wrapper input[type="date"]:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .date-picker-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            border-radius: 4px;
+            margin-right: 2px;
+            opacity: 0.6;
+            filter: invert(0.8);
+        }
+
+        .date-picker-wrapper input[type="date"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
+
+        .date-picker-wrapper input[type="date"].error {
+            border-color: #dc2626;
+            background-color: #fef2f2;
+        }
+
+        .date-picker-wrapper input[type="date"].error:focus {
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        }
+
+        .date-display {
+            display: none;
+        }
+
+        .form-hint {
+            display: block;
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .form-hint.error {
+            color: #dc2626;
         }
 
         .filter-group {
@@ -60,6 +128,50 @@ sort($semester_numbers);
             border: 1px solid #e2e8f0;
             border-radius: 6px;
             font-size: 0.95rem;
+        }
+
+        .quick-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0 16px;
+            flex-wrap: wrap;
+        }
+
+        .quick-toggle .label {
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .toggle-btn {
+            padding: 8px 14px;
+            border-radius: 999px;
+            border: 1px solid #cbd5e1;
+            background: #fff;
+            color: #0f172a;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .toggle-btn:hover {
+            background: #f8fafc;
+        }
+
+        .toggle-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .toggle-btn.active {
+            background: linear-gradient(135deg, #2f7f87, #6aa3a8);
+            color: #fff;
+            border-color: #2f7f87;
+        }
+
+        .toggle-btn.active:hover {
+            background: linear-gradient(135deg, #1f5459, #2f7f87);
+            border-color: #1f5459;
         }
 
         .filter-group select:focus {
@@ -235,8 +347,22 @@ sort($semester_numbers);
             background: #cbd5e1;
         }
 
+        .success-message {
+            color: #065f46;
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
         .error-message {
-            color: #dc2626;
+            color: #991b1b;
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+            padding: 12px;
+            border-radius: 4px;
             font-size: 0.9rem;
             margin-top: 5px;
         }
@@ -328,16 +454,34 @@ sort($semester_numbers);
                 </div>
                 <div class="form-group">
                     <label for="semNumber">Semester Number</label>
-                    <input type="number" id="semNumber" name="semester_number" required min="1" max="12" placeholder="e.g., 1">
+                    <select id="semNumber" name="semester_number" required disabled>
+                        <option value="">Select program first</option>
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label for="academicYear">Academic Year</label>
-                    <input type="text" id="academicYear" name="academic_year" required placeholder="e.g., 2024-2025" pattern="^\d{4}-\d{4}$">
+                    <label for="startAcademicYear">Program Start Year</label>
+                    <input type="number" id="startAcademicYear" name="start_academic_year" required min="2000" max="2099" placeholder="e.g., 2025">
+                </div>
+                <div class="form-group">
+                    <label for="endAcademicYear">Program End Year</label>
+                    <input type="number" id="endAcademicYear" name="end_academic_year" required min="2000" max="2099" placeholder="e.g., 2028">
                 </div>
             </div>
-            <div class="form-group">
-                <label for="feeAmount">Fee Amount (Optional)</label>
-                <input type="number" id="feeAmount" name="fee_amount" step="0.01" min="0" placeholder="e.g., 5000">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="startDate">Semester Start Date</label>
+                    <div class="date-picker-wrapper">
+                        <input type="text" id="startDate" name="start_date" class="flatpickr-input" required placeholder="Select date...">
+                    </div>
+                    <small class="form-hint">Date must be between 2000 and 2099</small>
+                </div>
+                <div class="form-group">
+                    <label for="endDate">Semester End Date</label>
+                    <div class="date-picker-wrapper">
+                        <input type="text" id="endDate" name="end_date" class="flatpickr-input" required placeholder="Select date...">
+                    </div>
+                    <small class="form-hint">Date must be between 2000 and 2099</small>
+                </div>
             </div>
             <div id="formMessage"></div>
             <div class="form-actions">
@@ -349,24 +493,26 @@ sort($semester_numbers);
 
     <!-- Filters -->
     <div class="filter-group">
-        <label for="programFilter">Filter by Program:</label>
+        <input type="text" id="semesterSearch" placeholder="Search program, year, status..." oninput="filterSemesters()">
+
         <select id="programFilter" onchange="filterSemesters()">
             <option value="">All Programs</option>
             <?php foreach ($programs as $prog): ?>
-                <option value="<?php echo e($prog['program_name']); ?>"><?php echo e($prog['program_name']); ?></option>
+                <option value="<?php echo e($prog['program_name']); ?>" data-program-id="<?php echo e($prog['id']); ?>"><?php echo e($prog['program_name']); ?></option>
             <?php endforeach; ?>
         </select>
 
-        <label for="semesterNumberFilter">Semester Number:</label>
         <select id="semesterNumberFilter" onchange="filterSemesters()">
             <option value="">All Semesters</option>
             <?php foreach ($semester_numbers as $number): ?>
                 <option value="<?php echo e($number); ?>">Sem <?php echo e($number); ?></option>
             <?php endforeach; ?>
         </select>
+    </div>
 
-        <label for="semesterSearch">Search:</label>
-        <input type="text" id="semesterSearch" placeholder="Search program, year, status..." oninput="filterSemesters()">
+    <div class="quick-toggle">
+        <button type="button" class="toggle-btn" id="toggleOddBtn" onclick="requestTermToggle('odd')">Odd Semesters</button>
+        <button type="button" class="toggle-btn" id="toggleEvenBtn" onclick="requestTermToggle('even')">Even Semesters</button>
     </div>
 
     <!-- Semesters Table -->
@@ -383,18 +529,27 @@ sort($semester_numbers);
                         <th>Semester Number</th>
                         <th>Term</th>
                         <th>Academic Year</th>
+                        <th>Semester Start Date</th>
+                        <th>Semester End Date</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="semestersTable">
                     <?php foreach ($semesters as $sem): ?>
+                        <?php $semNum = (int) ($sem['semester_number'] ?? 0); ?>
                         <tr class="semester-row"
+                            data-semester-id="<?php echo e($sem['id']); ?>"
                             data-program="<?php echo e($sem['program_name'] ?? 'N/A'); ?>"
+                            data-program-id="<?php echo e($sem['program_id'] ?? 0); ?>"
+                            data-program-name="<?php echo e($sem['program_name'] ?? 'N/A'); ?>"
                             data-semester-number="<?php echo e($sem['semester_number'] ?? ''); ?>"
+                            data-term="<?php echo ($semNum % 2 === 0) ? 'even' : 'odd'; ?>"
                             data-search="<?php echo e(strtolower(trim(
                                 ($sem['program_name'] ?? '') . ' ' .
-                                ($sem['academic_year'] ?? '') . ' ' .
+                                ($sem['start_academic_year'] ?? '') . '-' . ($sem['end_academic_year'] ?? '') . ' ' .
+                                ($sem['start_date'] ?? '') . ' ' .
+                                ($sem['end_date'] ?? '') . ' ' .
                                 ($sem['semester_number'] ?? '') . ' ' .
                                 (((int) ($sem['is_current'] ?? 0) === 1) ? 'current active' : 'inactive')
                             ))); ?>">
@@ -403,12 +558,19 @@ sort($semester_numbers);
                             <td>
                                 <span class="term-badge">
                                     <?php 
-                                        $semNum = (int)($sem['semester_number'] ?? 0);
                                         echo ($semNum % 2 === 0) ? 'Even' : 'Odd';
                                     ?>
                                 </span>
                             </td>
                             <td><?php echo e($sem['academic_year'] ?? 'N/A'); ?></td>
+                            <td><?php 
+                                $startDate = isset($sem['start_date']) ? DateTime::createFromFormat('Y-m-d', $sem['start_date']) : null;
+                                echo $startDate ? $startDate->format('d-m-Y') : 'N/A'; 
+                            ?></td>
+                            <td><?php 
+                                $endDate = isset($sem['end_date']) ? DateTime::createFromFormat('Y-m-d', $sem['end_date']) : null;
+                                echo $endDate ? $endDate->format('d-m-Y') : 'N/A'; 
+                            ?></td>
                             <td>
                                 <span class="status-badge <?php echo ($sem['is_current'] ?? 0) ? 'status-current' : 'status-other'; ?>">
                                     <?php echo ($sem['is_current'] ?? 0) ? 'Current' : 'Inactive'; ?>
@@ -447,11 +609,283 @@ sort($semester_numbers);
         </div>
     </div>
 
+    <!-- Semester Creation Confirmation Modal -->
+    <div id="createSemesterModal" class="modal-backdrop" aria-hidden="true">
+        <div class="modal-card" role="dialog" aria-modal="true">
+            <h3 class="modal-title">Confirm Semester Details</h3>
+            <p class="modal-text">Please review the semester information before creating:</p>
+            <div style="background: #f8fafc; padding: 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.9rem;">
+                <div style="margin-bottom: 10px;"><strong>Program:</strong> <span id="confirmProgramName"></span></div>
+                <div style="margin-bottom: 10px;"><strong>Semester Number:</strong> <span id="confirmSemesterNumber"></span></div>
+                <div style="margin-bottom: 10px;"><strong>Academic Year:</strong> <span id="confirmProgramPeriod"></span></div>
+                <div style="margin-bottom: 10px;"><strong>Semester Start Date:</strong> <span id="confirmStartDate"></span></div>
+                <div><strong>Semester End Date:</strong> <span id="confirmEndDate"></span></div>
+            </div>
+            <div id="confirmCreateMessage"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeCreateSemesterModal()">Cancel</button>
+                <button type="button" class="btn-submit" onclick="submitSemesterCreation()">Create Semester</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Date formatting utility for display
+        const formatDateDisplay = (dateStr) => {
+            if (!dateStr) return 'N/A';
+            const [year, month, day] = dateStr.split('-');
+            return `${day}-${month}-${year}`;
+        };
+
+        const getSelectedProgramInfo = () => {
+            const select = document.getElementById('programFilter');
+            if (!select || !select.value) return null;
+            const option = select.options[select.selectedIndex];
+            const programId = parseInt(option?.dataset?.programId || '0');
+            if (!programId) return null;
+            return {
+                id: programId,
+                name: option?.text || ''
+            };
+        };
+
+        const updateQuickToggleState = () => {
+            const info = getSelectedProgramInfo();
+            const oddBtn = document.getElementById('toggleOddBtn');
+            const evenBtn = document.getElementById('toggleEvenBtn');
+
+            if (oddBtn) oddBtn.disabled = false;
+            if (evenBtn) evenBtn.disabled = false;
+
+            const noProgram = !info;
+            if (oddBtn) oddBtn.dataset.requireProgram = noProgram ? '1' : '0';
+            if (evenBtn) evenBtn.dataset.requireProgram = noProgram ? '1' : '0';
+
+            // Determine which term is currently active for the selected program
+            if (info && info.id) {
+                const allRows = document.querySelectorAll('.semester-row');
+                let activeOdd = false;
+                let activeEven = false;
+
+                allRows.forEach(row => {
+                    const progId = parseInt(row.dataset.programId);
+                    const term = row.dataset.term;
+                    const isCurrent = row.querySelector('.status-current') !== null;
+
+                    if (progId === info.id && isCurrent) {
+                        if (term === 'odd') {
+                            activeOdd = true;
+                        } else if (term === 'even') {
+                            activeEven = true;
+                        }
+                    }
+                });
+
+                // Update button states
+                if (oddBtn) {
+                    if (activeOdd) {
+                        oddBtn.classList.add('active');
+                    } else {
+                        oddBtn.classList.remove('active');
+                    }
+                }
+
+                if (evenBtn) {
+                    if (activeEven) {
+                        evenBtn.classList.add('active');
+                    } else {
+                        evenBtn.classList.remove('active');
+                    }
+                }
+            } else {
+                // Remove active class if no program selected
+                if (oddBtn) oddBtn.classList.remove('active');
+                if (evenBtn) evenBtn.classList.remove('active');
+            }
+        };
+
+        // Store programs data for semester population
+        const programsData = <?php echo json_encode($programs); ?>;
+
+        // Populate semester number dropdown based on selected program
+        const populateSemesterNumbers = (programId) => {
+            const semesterSelect = document.getElementById('semNumber');
+            
+            // Find the selected program
+            const selectedProgram = programsData.find(p => p.id == programId);
+            
+            if (!selectedProgram) {
+                semesterSelect.innerHTML = '<option value="">Select program first</option>';
+                semesterSelect.disabled = true;
+                return;
+            }
+            
+            // Get the duration in semesters
+            const duration = parseInt(selectedProgram.duration_semesters) || 0;
+            
+            // Populate dropdown with 1 to duration
+            let options = '<option value="">Select semester</option>';
+            for (let i = 1; i <= duration; i++) {
+                options += `<option value="${i}">Semester ${i}</option>`;
+            }
+            
+            semesterSelect.innerHTML = options;
+            semesterSelect.disabled = false;
+            semesterSelect.value = ''; // Reset selection
+        };
+
+        // Prevent arrow key navigation in semester select after selection
+        document.addEventListener('DOMContentLoaded', function() {
+            const programSelect = document.getElementById('semProgram');
+            const semesterSelect = document.getElementById('semNumber');
+            
+            // When program is selected, populate semesters
+            if (programSelect) {
+                programSelect.addEventListener('change', function() {
+                    if (this.value) {
+                        populateSemesterNumbers(this.value);
+                    } else {
+                        // Reset semester select if program is cleared
+                        semesterSelect.innerHTML = '<option value="">Select program first</option>';
+                        semesterSelect.disabled = true;
+                    }
+                });
+                
+                // Prevent arrow key navigation in program select if a program is selected
+                programSelect.addEventListener('keydown', function(event) {
+                    if (this.value && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+                        event.preventDefault();
+                    }
+                });
+            }
+            
+            // Prevent arrow key navigation in semester select if a semester is selected
+            if (semesterSelect) {
+                semesterSelect.addEventListener('keydown', function(event) {
+                    if (this.value && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+                        event.preventDefault();
+                    }
+                });
+            }
+        });
+
+        document.getElementById('programFilter')?.addEventListener('change', updateQuickToggleState);
+
+        // Calculate days in month
+        const getDaysInMonth = (month, year) => {
+            const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+            if (month === 2 && year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) {
+                return 29; // Leap year
+            }
+            return daysInMonth[month - 1];
+        };
+
+        // Validate date input
+        const validateDateInput = (inputElement) => {
+            const value = inputElement.value;
+            if (!value) return true; // Empty is OK (will be caught by required)
+
+            // Check if it matches YYYY-MM-DD format
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+                return false;
+            }
+
+            const [year, month, day] = value.split('-').map(Number);
+
+            // Validate year is 4 digits and within range
+            if (year < 2000 || year > 2099) {
+                return false;
+            }
+
+            // Validate month
+            if (month < 1 || month > 12) {
+                return false;
+            }
+
+            // Validate day
+            if (day < 1 || day > 31) {
+                return false;
+            }
+
+            // Basic date validation (month-specific)
+            const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+            if (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) {
+                daysInMonth[1] = 29; // Leap year
+            }
+
+            if (day > daysInMonth[month - 1]) {
+                return false;
+            }
+
+            return true;
+        };
+
+        // Setup date input validation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Flatpickr for start date
+            flatpickr('#startDate', {
+                dateFormat: 'Y-m-d',
+                altInput: true,
+                altFormat: 'd-m-Y',
+                minDate: '2000-01-01',
+                maxDate: '2099-12-31',
+                monthSelectorType: 'static',
+                yearSelectableTo: 2099,
+                yearSelectableFrom: 2000,
+                disableMobile: true,
+                onClose: function(selectedDates, dateStr) {
+                    if (dateStr) {
+                        const startDateInput = document.getElementById('startDate');
+                        validateAndUpdateField(startDateInput);
+                    }
+                }
+            });
+            
+            // Initialize Flatpickr for end date
+            flatpickr('#endDate', {
+                dateFormat: 'Y-m-d',
+                altInput: true,
+                altFormat: 'd-m-Y',
+                minDate: '2000-01-01',
+                maxDate: '2099-12-31',
+                monthSelectorType: 'static',
+                yearSelectableTo: 2099,
+                yearSelectableFrom: 2000,
+                disableMobile: true,
+                onClose: function(selectedDates, dateStr) {
+                    if (dateStr) {
+                        const endDateInput = document.getElementById('endDate');
+                        validateAndUpdateField(endDateInput);
+                    }
+                }
+            });
+
+            const validateAndUpdateField = (input) => {
+                const isValid = validateDateInput(input);
+                if (!isValid && input.value) {
+                    input.classList.add('error');
+                    input.setCustomValidity('Please enter a valid date between 2000-01-01 and 2099-12-31');
+                } else {
+                    input.classList.remove('error');
+                    input.setCustomValidity('');
+                }
+            };
+        });
+
         function toggleAddSemesterForm() {
             const form = document.getElementById('addSemesterForm');
             form.classList.toggle('active');
             if (form.classList.contains('active')) {
+                // Reset all form fields
+                document.getElementById('semProgram').value = '';
+                document.getElementById('semNumber').innerHTML = '<option value="">Select program first</option>';
+                document.getElementById('semNumber').disabled = true;
+                document.getElementById('startAcademicYear').value = '';
+                document.getElementById('endAcademicYear').value = '';
+                document.getElementById('startDate').value = '';
+                document.getElementById('endDate').value = '';
+                document.getElementById('formMessage').innerHTML = '';
+                
                 document.getElementById('semProgram').focus();
             }
         }
@@ -460,6 +894,86 @@ sort($semester_numbers);
             event.preventDefault();
             const form = event.target;
             const formData = new FormData(form);
+            
+            // Convert FormData to object with proper type conversions
+            const data = {
+                program_id: parseInt(formData.get('program_id')),
+                semester_number: parseInt(formData.get('semester_number')),
+                start_date: formData.get('start_date'),
+                end_date: formData.get('end_date'),
+                start_academic_year: parseInt(formData.get('start_academic_year')),
+                end_academic_year: parseInt(formData.get('end_academic_year'))
+            };
+
+            // Validate all required fields
+            if (!data.program_id || !data.semester_number || !data.start_date || !data.end_date || !data.start_academic_year || !data.end_academic_year) {
+                document.getElementById('formMessage').innerHTML = '<div class="error-message">All fields are required</div>';
+                return;
+            }
+
+            // Validate date inputs
+            const startDateInput = document.getElementById('startDate');
+            const endDateInput = document.getElementById('endDate');
+            
+            if (!validateDateInput(startDateInput)) {
+                document.getElementById('formMessage').innerHTML = '<div class="error-message">Semester start date must be valid and between 2000-01-01 and 2099-12-31</div>';
+                startDateInput.focus();
+                return;
+            }
+
+            if (!validateDateInput(endDateInput)) {
+                document.getElementById('formMessage').innerHTML = '<div class="error-message">Semester end date must be valid and between 2000-01-01 and 2099-12-31</div>';
+                endDateInput.focus();
+                return;
+            }
+
+            // Validate end date is after start date
+            if (data.start_date >= data.end_date) {
+                document.getElementById('formMessage').innerHTML = '<div class="error-message">End date must be after start date</div>';
+                return;
+            }
+
+            // Find program name
+            const programSelect = document.getElementById('semProgram');
+            const programName = programSelect.options[programSelect.selectedIndex]?.text || 'Unknown Program';
+
+            // Populate confirmation modal
+            document.getElementById('confirmProgramName').textContent = programName;
+            document.getElementById('confirmSemesterNumber').textContent = data.semester_number;
+            document.getElementById('confirmProgramPeriod').textContent = data.start_academic_year + ' - ' + data.end_academic_year;
+            document.getElementById('confirmStartDate').textContent = formatDateDisplay(data.start_date);
+            document.getElementById('confirmEndDate').textContent = formatDateDisplay(data.end_date);
+            document.getElementById('confirmCreateMessage').innerHTML = '';
+
+            // Store form data for submission
+            window.pendingSemesterData = data;
+
+            // Show confirmation modal
+            document.getElementById('createSemesterModal').classList.add('show');
+            document.getElementById('createSemesterModal').setAttribute('aria-hidden', 'false');
+        }
+
+        function closeCreateSemesterModal() {
+            document.getElementById('createSemesterModal').classList.remove('show');
+            document.getElementById('createSemesterModal').setAttribute('aria-hidden', 'true');
+            window.pendingSemesterData = null;
+        }
+
+        function submitSemesterCreation() {
+            const data = window.pendingSemesterData;
+            if (!data) {
+                document.getElementById('confirmCreateMessage').innerHTML = '<div class="error-message">No data to submit</div>';
+                return;
+            }
+
+            // Validate data
+            if (!data.program_id || !data.semester_number || !data.start_date || !data.end_date || !data.start_academic_year || !data.end_academic_year) {
+                document.getElementById('confirmCreateMessage').innerHTML = '<div class="error-message">Missing required fields</div>';
+                return;
+            }
+
+            const jsonData = JSON.stringify(data);
+            console.log('Sending data:', jsonData);
 
             fetch('<?php echo e(url('vp/semesters')); ?>', {
                 method: 'POST',
@@ -467,45 +981,109 @@ sort($semester_numbers);
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                 },
-                body: JSON.stringify(Object.fromEntries(formData))
+                body: jsonData
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`HTTP ${response.status}: ${text}`);
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
-                const messageDiv = document.getElementById('formMessage');
+                const messageDiv = document.getElementById('confirmCreateMessage');
                 if (data.success) {
-                    messageDiv.innerHTML = '<div class="success-message">Semester added successfully. Refreshing...</div>';
+                    messageDiv.innerHTML = '<div class="success-message">Semester created successfully. Refreshing...</div>';
                     setTimeout(() => location.reload(), 1500);
                 } else {
-                    messageDiv.innerHTML = '<div class="error-message">' + (data.message || 'Error adding semester') + '</div>';
+                    messageDiv.innerHTML = '<div class="error-message">' + (data.message || 'Error creating semester') + '</div>';
                 }
             })
             .catch(error => {
-                document.getElementById('formMessage').innerHTML = '<div class="error-message">Error: ' + error.message + '</div>';
+                console.error('Error:', error);
+                document.getElementById('confirmCreateMessage').innerHTML = '<div class="error-message">Error: ' + error.message + '</div>';
             });
         }
 
+        // Close modal when clicking outside of it
+        document.getElementById('createSemesterModal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'createSemesterModal') {
+                closeCreateSemesterModal();
+            }
+        });
+
         function activateSemester(id) {
+            const row = document.querySelector(`.semester-row[data-semester-id="${id}"]`);
+            if (!row) {
+                showMessage('Unable to find selected semester.', 'error');
+                return;
+            }
+
+            const programId = parseInt(row.dataset.programId || '0');
+            const term = (row.dataset.term || '').toLowerCase();
+            const programName = row.dataset.programName || 'this program';
+
+            if (!programId || (term !== 'odd' && term !== 'even')) {
+                showMessage('Missing program or term details for this semester.', 'error');
+                return;
+            }
+
+            const termLabel = term === 'odd' ? 'Odd' : 'Even';
+            const oppositeLabel = term === 'odd' ? 'Even' : 'Odd';
+
             openConfirmModal(
-                'Activate Semester',
-                'Activate this semester? This will deactivate other semesters from the same program.',
+                `Activate ${termLabel} Semesters`,
+                `Activate all ${termLabel.toLowerCase()} semesters for ${programName}? This will deactivate all ${oppositeLabel.toLowerCase()} semesters.`,
                 () => {
-                    fetch('<?php echo e(url('vp/semesters')); ?>/' + id + '/activate', {
-                        method: 'POST',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            showMessage('Semester activated successfully.', 'success');
-                            location.reload();
-                        } else {
-                            showMessage('Error: ' + (data.message || 'Failed to activate semester'), 'error');
-                        }
-                    });
+                    toggleTermForProgram(programId, term);
                 }
             );
+        }
+
+        function requestTermToggle(term) {
+            const programInfo = getSelectedProgramInfo();
+            if (!programInfo) {
+                showMessage('Select a program to use quick toggle.', 'error');
+                return;
+            }
+
+            const termLabel = term === 'odd' ? 'Odd' : 'Even';
+            const oppositeLabel = term === 'odd' ? 'Even' : 'Odd';
+
+            openConfirmModal(
+                `Activate ${termLabel} Semesters`,
+                `Activate all ${termLabel.toLowerCase()} semesters for ${programInfo.name}? This will deactivate all ${oppositeLabel.toLowerCase()} semesters.`,
+                () => {
+                    toggleTermForProgram(programInfo.id, term);
+                }
+            );
+        }
+
+        function toggleTermForProgram(programId, term) {
+            fetch('<?php echo e(url('vp/semesters/toggle-term')); ?>', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({
+                    program_id: programId,
+                    term: term
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(data.message || 'Semesters updated successfully.', 'success');
+                    location.reload();
+                } else {
+                    showMessage('Error: ' + (data.message || 'Failed to update semesters'), 'error');
+                }
+            })
+            .catch(error => {
+                showMessage('Error: ' + error.message, 'error');
+            });
         }
 
         let semestersPage = 1;
@@ -540,7 +1118,7 @@ sort($semester_numbers);
 
             row = document.createElement('tr');
             row.id = 'semestersNoResults';
-            row.innerHTML = '<td colspan="6" class="empty-message">No matching semesters found.</td>';
+            row.innerHTML = '<td colspan="8" class="empty-message">No matching semesters found.</td>';
             tbody.appendChild(row);
             return row;
         }
@@ -601,6 +1179,14 @@ sort($semester_numbers);
         });
 
         renderSemesterTable();
+
+        const programFilter = document.getElementById('programFilter');
+        if (programFilter && programFilter.options.length === 2 && programFilter.selectedIndex === 0) {
+            programFilter.selectedIndex = 1;
+            filterSemesters();
+        }
+
+        updateQuickToggleState();
 
         function showMessage(message, type) {
             const banner = document.getElementById('semesterMessage');

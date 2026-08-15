@@ -1,3 +1,4 @@
+<?php $email_verification_pending = $email_verification_pending ?? false; ?>
 <div class="profile-card">
     <div class="profile-section-title">Profile Information</div>
 

@@ -180,7 +180,9 @@ $teachers = $teachers ?? [];
             display: flex;
             gap: 12px;
             margin: 10px 0 18px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            align-items: center;
+            overflow-x: auto;
         }
 
         .filter-input,
@@ -190,6 +192,16 @@ $teachers = $teachers ?? [];
             border-radius: 6px;
             font-size: 0.95rem;
             background: #fff;
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .filter-input {
+            cursor: text;
+        }
+
+        .filter-select {
+            cursor: pointer;
         }
     </style>
 
@@ -200,7 +212,7 @@ $teachers = $teachers ?? [];
             <div class="form-row">
                 <div class="form-group">
                     <label for="staffId">Staff ID</label>
-                    <input type="text" id="staffId" name="login_id" required placeholder="e.g., T001">
+                    <input type="text" id="staffId" name="login_id" required placeholder="Loading..." readonly>
                 </div>
                 <div class="form-group">
                     <label for="fullName">Full Name</label>
@@ -210,9 +222,6 @@ $teachers = $teachers ?? [];
             <div class="form-group">
                 <label for="email">Email Address</label>
                 <input type="email" id="email" name="email" required placeholder="e.g., john@example.com">
-            </div>
-            <div class="note">
-                ℹ️ An activation email will be sent so the teacher can set their password on first login.
             </div>
             <div id="formMessage"></div>
             <div class="form-actions">
@@ -248,6 +257,7 @@ $teachers = $teachers ?? [];
                         <th>Name</th>
                         <th>Email</th>
                         <th>Status</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody id="teachersTableBody">
@@ -264,6 +274,9 @@ $teachers = $teachers ?? [];
                                 <span class="status-badge <?php echo ($teacher['is_active'] ?? false) ? 'status-active' : 'status-inactive'; ?>">
                                     <?php echo ($teacher['is_active'] ?? false) ? 'Active' : 'Inactive'; ?>
                                 </span>
+                            </td>
+                            <td>
+                                <a class="view-btn" href="<?php echo e(url('vp/teachers/' . ($teacher['id'] ?? 0))); ?>">View</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -287,8 +300,39 @@ $teachers = $teachers ?? [];
             const form = document.getElementById('addTeacherForm');
             form.classList.toggle('active');
             if (form.classList.contains('active')) {
-                document.getElementById('staffId').focus();
+                refreshTeacherLoginId();
+                document.getElementById('fullName').focus();
             }
+        }
+
+        function refreshTeacherLoginId() {
+            const loginIdInput = document.getElementById('staffId');
+            if (!loginIdInput) return;
+
+            loginIdInput.value = 'Loading...';
+
+            fetch('<?php echo e(url('vp/teachers/next-login-id')); ?>', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.data && data.data.login_id) {
+                    loginIdInput.value = data.data.login_id;
+                } else {
+                    loginIdInput.value = '';
+                    document.getElementById('formMessage').innerHTML =
+                        '<div class="error-message">' + (data.message || 'Unable to generate Staff ID.') + '</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                loginIdInput.value = '';
+                document.getElementById('formMessage').innerHTML =
+                    '<div class="error-message">Error generating Staff ID: ' + error.message + '</div>';
+            });
         }
 
         function handleAddTeacher(event) {

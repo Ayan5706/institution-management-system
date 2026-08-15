@@ -1,241 +1,295 @@
 <?php
 /** @var array $student */
-/** @var array $profile */
-/** @var array $program */
-/** @var array $fee_summary */
+/** @var array $student_profile */
+/** @var array|null $program */
+/** @var array|null $current_semester */
 /** @var array $attendance_summary */
+/** @var array|null $created_by */
+/** @var string $fee_status */
+/** @var float $fee_paid */
 $activeNav = 'students';
-$student = $student ?? [];
-$profile = $profile ?? [];
-$program = $program ?? [];
-$fee_summary = $fee_summary ?? [];
-$attendance_summary = $attendance_summary ?? [];
+$student = $student ?? [
+    'id' => 0,
+    'role' => 'STUDENT',
+    'login_id' => 'student001',
+    'full_name' => 'John Student',
+    'email' => 'john@example.test',
+    'phone' => '09170000001',
+    'is_active' => 1,
+    'created_at' => '2026-04-11 10:00:00',
+];
+$student_profile = $student_profile ?? [];
+$program = $program ?? null;
+$current_semester = $current_semester ?? null;
+$attendance_summary = $attendance_summary ?? ['total' => 0, 'present' => 0, 'rate' => 0];
+$title = 'Student Details';
 ?>
 <?php ob_start(); ?>
 <div class="card content-card">
     <div class="toolbar">
         <div>
-            <h2 style="margin:0 0 6px;"><?php echo e($student['full_name'] ?? 'Student Details'); ?></h2>
-            <div style="color:#64748b;">View student profile and academic information</div>
+            <h2 style="margin:0 0 6px;">Student Details</h2>
+            <div style="color:#64748b;">View student account information (read-only)</div>
         </div>
-        <div>
-            <a href="<?php echo e(url('manager/students')); ?>" class="btn btn-ghost">← Back to Students</a>
-        </div>
+        <a class="btn-back" href="<?php echo e(url('manager/students')); ?>">← Back to Students</a>
     </div>
 
     <style>
-        .profile-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
             gap: 20px;
+        }
+
+        .btn-back {
+            padding: 10px 16px;
+            background: #f8fafc;
+            color: #0f172a;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .btn-back:hover {
+            background: #e2e8f0;
+        }
+
+        .detail-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #2f7f87 0%, #0d9488 100%);
+            color: #fff;
+            border-radius: 12px;
             margin-bottom: 30px;
         }
 
-        .profile-section {
-            padding: 20px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-        }
-
-        .profile-section h3 {
-            margin: 0 0 16px;
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #0f172a;
-        }
-
-        .profile-row {
+        .detail-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
             display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid #e2e8f0;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
         }
 
-        .profile-row:last-child {
-            border-bottom: none;
+        .detail-header-info h3 {
+            margin: 0 0 5px;
+            font-size: 1.5rem;
+            font-weight: 700;
         }
 
-        .profile-label {
-            font-weight: 600;
-            color: #475569;
-        }
-
-        .profile-value {
-            color: #0f172a;
-            font-weight: 500;
+        .detail-header-info p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 0.95rem;
         }
 
         .status-badge {
             display: inline-block;
-            padding: 6px 12px;
-            border-radius: 8px;
+            padding: 4px 12px;
+            border-radius: 6px;
             font-size: 0.85rem;
             font-weight: 600;
         }
 
-        .status-badge.active {
-            background: #d1fae5;
+        .status-active {
+            background: rgba(16, 185, 129, 0.2);
             color: #065f46;
         }
 
-        .status-badge.inactive {
-            background: #fee2e2;
+        .status-inactive {
+            background: rgba(239, 68, 68, 0.2);
             color: #991b1b;
         }
 
-        .summary-grid {
+        .detail-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 16px;
-            margin-top: 20px;
         }
 
-        .summary-card {
+        .detail-item {
             padding: 16px;
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            text-align: center;
-        }
-
-        .summary-label {
-            color: #64748b;
-            font-size: 0.9rem;
-            margin-bottom: 8px;
-        }
-
-        .summary-value {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #0f172a;
-        }
-
-        .section {
-            margin-top: 30px;
-            padding: 20px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
             border-radius: 12px;
+            background: #f8fbff;
+            border: 1px solid #e2e8f0;
         }
 
-        .section h3 {
-            margin: 0 0 16px;
-            font-size: 1.1rem;
+        .detail-label {
+            display: block;
+            color: #64748b;
+            font-size: 0.88rem;
+            margin-bottom: 6px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-value {
+            color: #0f172a;
+            font-size: 1.02rem;
+            font-weight: 600;
+            word-break: break-all;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
             font-weight: 700;
             color: #0f172a;
+            margin: 30px 0 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
         }
 
-        @media (max-width: 768px) {
-            .profile-container {
+        .info-box {
+            padding: 16px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            color: #1e40af;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 720px) {
+            .detail-grid {
                 grid-template-columns: 1fr;
             }
 
-            .profile-row {
+            .detail-header {
                 flex-direction: column;
-                gap: 8px;
+                text-align: center;
             }
 
-            .summary-grid {
-                grid-template-columns: 1fr;
+            .toolbar {
+                flex-direction: column;
+            }
+
+            .btn-back {
+                width: 100%;
+                text-align: center;
             }
         }
     </style>
 
-    <!-- Student Basic Information -->
-    <div class="profile-container">
-        <!-- Personal Information -->
-        <div class="profile-section">
-            <h3>Personal Information</h3>
-            <div class="profile-row">
-                <span class="profile-label">Full Name</span>
-                <span class="profile-value"><?php echo e($student['full_name'] ?? 'N/A'); ?></span>
-            </div>
-            <div class="profile-row">
-                <span class="profile-label">Email</span>
-                <span class="profile-value"><?php echo e($student['email'] ?? 'N/A'); ?></span>
-            </div>
-            <div class="profile-row">
-                <span class="profile-label">Phone</span>
-                <span class="profile-value"><?php echo e($student['phone'] ?? 'N/A'); ?></span>
-            </div>
-            <div class="profile-row">
-                <span class="profile-label">Login ID</span>
-                <span class="profile-value"><?php echo e($student['login_id'] ?? 'N/A'); ?></span>
-            </div>
+    <div class="detail-header">
+        <div class="detail-avatar">
+            <?php
+            $initials = '';
+            $nameParts = explode(' ', $student['full_name'] ?? '');
+            foreach (array_slice($nameParts, 0, 2) as $part) {
+                $initials .= substr($part, 0, 1);
+            }
+            echo e(strtoupper($initials ?: 'S'));
+            ?>
         </div>
-
-        <!-- Academic Information -->
-        <div class="profile-section">
-            <h3>Academic Information</h3>
-            <div class="profile-row">
-                <span class="profile-label">Registration Number</span>
-                <span class="profile-value"><?php echo e($profile['registration_number'] ?? 'N/A'); ?></span>
-            </div>
-            <div class="profile-row">
-                <span class="profile-label">Date of Birth</span>
-                <span class="profile-value"><?php echo e($profile['date_of_birth'] ? date('M d, Y', strtotime($profile['date_of_birth'])) : 'N/A'); ?></span>
-            </div>
-            <div class="profile-row">
-                <span class="profile-label">Program</span>
-                <span class="profile-value"><?php echo e($program['program_name'] ?? 'N/A'); ?></span>
-            </div>
-            <div class="profile-row">
-                <span class="profile-label">Account Status</span>
-                <span class="profile-value">
-                    <span class="status-badge <?php echo e($student['is_active'] ? 'active' : 'inactive'); ?>">
-                        <?php echo e($student['is_active'] ? '✓ Active' : '○ Inactive'); ?>
-                    </span>
+        <div class="detail-header-info">
+            <h3><?php echo e($student['full_name'] ?? 'N/A'); ?></h3>
+            <p>
+                <strong>Login ID:</strong> <?php echo e($student['login_id'] ?? 'N/A'); ?>
+            </p>
+            <p>
+                <span class="status-badge <?php echo ((int) ($student['is_active'] ?? 0)) === 1 ? 'status-active' : 'status-inactive'; ?>">
+                    <?php echo ((int) ($student['is_active'] ?? 0)) === 1 ? '✓ Active' : '✗ Inactive'; ?>
                 </span>
+            </p>
+        </div>
+    </div>
+
+    <h2 class="section-title">Contact Information</h2>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Email Address</span>
+            <div class="detail-value">
+                <a href="mailto:<?php echo e($student['email'] ?? ''); ?>" style="color: #2563eb; text-decoration: none;">
+                    <?php echo e($student['email'] ?? 'N/A'); ?>
+                </a>
+            </div>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Phone Number</span>
+            <div class="detail-value">
+                <?php echo e($student['phone'] ?? '-'); ?>
             </div>
         </div>
     </div>
 
-    <!-- Fee Summary Section -->
-    <div class="section">
-        <h3>Fee Summary</h3>
-        <div class="summary-grid">
-            <div class="summary-card">
-                <div class="summary-label">Total Fees</div>
-                <div class="summary-value">$<?php echo e(number_format($fee_summary['total_fees'] ?? 0, 2)); ?></div>
+    <h2 class="section-title">Account Information</h2>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Account Type</span>
+            <div class="detail-value"><?php echo e($student['role'] ?? 'STUDENT'); ?></div>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Managed by</span>
+            <div class="detail-value"><?php echo e($created_by['role'] ?? 'System'); ?></div>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Account Created</span>
+            <div class="detail-value"><?php echo e($student['created_at'] ?? 'N/A'); ?></div>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Last Updated</span>
+            <div class="detail-value"><?php echo e($student['updated_at'] ?? $student['created_at'] ?? 'N/A'); ?></div>
+        </div>
+    </div>
+
+    <h2 class="section-title">Academic Progress</h2>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Registration Number</span>
+            <div class="detail-value"><?php echo e($student_profile['registration_number'] ?? 'N/A'); ?></div>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Program</span>
+            <div class="detail-value">
+                <?php echo e($program['program_name'] ?? 'N/A'); ?>
             </div>
-            <div class="summary-card">
-                <div class="summary-label">Amount Paid</div>
-                <div class="summary-value" style="color: #10b981;">$<?php echo e(number_format($fee_summary['paid_amount'] ?? 0, 2)); ?></div>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Current Semester</span>
+            <div class="detail-value">
+                <?php echo e($current_semester['semester_number'] ?? 'N/A'); ?>
             </div>
-            <div class="summary-card">
-                <div class="summary-label">Amount Due</div>
-                <div class="summary-value" style="color: <?php echo e(($fee_summary['due_amount'] ?? 0) > 0 ? '#dc2626' : '#10b981'); ?>;">
-                    $<?php echo e(number_format($fee_summary['due_amount'] ?? 0, 2)); ?>
-                </div>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Academic Year</span>
+            <div class="detail-value">
+                <?php echo e($current_semester['academic_year'] ?? 'N/A'); ?>
+            </div>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Attendance Rate</span>
+            <div class="detail-value">
+                <?php echo e((string) ($attendance_summary['rate'] ?? 0)); ?>%
+            </div>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Fee Status</span>
+            <div class="detail-value">
+                <?php echo e($fee_status ?? 'N/A'); ?>
             </div>
         </div>
     </div>
 
-    <!-- Attendance Summary Section -->
-    <div class="section">
-        <h3>Attendance Summary</h3>
-        <div class="summary-grid">
-            <div class="summary-card">
-                <div class="summary-label">Total Classes</div>
-                <div class="summary-value"><?php echo e($attendance_summary['total_classes'] ?? 0); ?></div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-label">Present</div>
-                <div class="summary-value" style="color: #10b981;"><?php echo e($attendance_summary['present'] ?? 0); ?></div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-label">Absent</div>
-                <div class="summary-value" style="color: #dc2626;"><?php echo e($attendance_summary['absent'] ?? 0); ?></div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-label">Late</div>
-                <div class="summary-value" style="color: #f59e0b;"><?php echo e($attendance_summary['late'] ?? 0); ?></div>
-            </div>
-        </div>
+    <div class="info-box" style="margin-top: 30px;">
+        <strong>ℹ️ Note:</strong> This is a read-only view of the student's account information. For additional details like enrollment records, grades, or program information, please refer to the student's profile in the academic management system.
     </div>
 </div>
 
 <?php
 $content = ob_get_clean();
 require dirname(__DIR__) . DIRECTORY_SEPARATOR . 'layouts' . DIRECTORY_SEPARATOR . 'app.php';
+?>

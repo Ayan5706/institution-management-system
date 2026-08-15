@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Core;
 
 use App\Config\Config;
+use App\Services\ActivationService;
 
 final class Application
 {
@@ -42,6 +43,13 @@ final class Application
         
         try {
             $this->startSessionIfNeeded();
+
+            $enabledRaw = (string) env('PRINCIPAL_ACTIVATION_ENABLED', '1');
+            $enabled = in_array(strtolower(trim($enabledRaw)), ['1', 'true', 'yes', 'on'], true);
+
+            if ($enabled) {
+                (new ActivationService())->sendPendingPrincipalActivations();
+            }
 
             $request = Request::capture();
             $this->router->dispatch($request);

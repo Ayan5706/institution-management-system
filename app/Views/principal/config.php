@@ -235,6 +235,148 @@ $config = $config ?? [];
             border-left: 4px solid #10b981;
             color: #065f46;
         }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-dialog {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-icon {
+            font-size: 1.5rem;
+        }
+
+        .modal-body {
+            color: #475569;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 24px;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .modal-btn-cancel {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+
+        .modal-btn-cancel:hover {
+            background: #e2e8f0;
+        }
+
+        .modal-btn-confirm {
+            background: #10b981;
+            color: #ffffff;
+        }
+
+        .modal-btn-confirm:hover {
+            background: #059669;
+        }
+
+        .modal-btn-confirm:active {
+            transform: scale(0.98);
+        }
+
+        @media (max-width: 900px) {
+            .config-section {
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .toolbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .config-section {
+                padding: 18px;
+            }
+
+            .time-input-row {
+                flex-direction: column;
+            }
+
+            .time-button {
+                width: 100%;
+            }
+
+            .time-picker {
+                position: static;
+                width: 100%;
+                margin-top: 8px;
+                box-shadow: none;
+            }
+
+            .time-picker-row {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .button-group > * {
+                width: 100%;
+            }
+        }
     </style>
 
     <div class="info-message">
@@ -348,25 +490,28 @@ $config = $config ?? [];
             </div>
         </div>
 
-        <div class="config-item">
-            <label class="config-label" for="grace_minutes">Grace Minutes</label>
-            <span class="config-description">Minutes allowed for late attendance (e.g., 5)</span>
-            <input 
-                type="number" 
-                id="grace_minutes" 
-                class="config-input" 
-                value="<?php echo e($config['GRACE_MINUTES'] ?? ''); ?>"
-                min="0"
-                max="60"
-                required
-            >
-        </div>
-
         <div class="button-group">
-            <button type="button" class="btn-save" onclick="saveConfig()">Save Changes</button>
+            <button type="button" class="btn-save" onclick="confirmSaveConfig()">Save Changes</button>
             <a href="<?php echo e(url('principal/dashboard')); ?>" class="btn-cancel">Cancel</a>
         </div>
     </form>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal-overlay">
+        <div class="modal-dialog" role="alertdialog" aria-labelledby="modal-title" aria-describedby="modal-description">
+            <div class="modal-header" id="modal-title">
+                <span class="modal-icon">⚙️</span>
+                Confirm Configuration Change
+            </div>
+            <div class="modal-body" id="modal-description">
+                Are you sure you want to save these configuration changes? This will update system settings that affect all users.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="modal-btn modal-btn-cancel" onclick="cancelConfirm()">Cancel</button>
+                <button type="button" class="modal-btn modal-btn-confirm" onclick="proceedSave()">Save Changes</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         function showConfigMessage(message, isError) {
@@ -382,6 +527,27 @@ $config = $config ?? [];
             messageEl.textContent = '';
             messageEl.classList.remove('error', 'success');
             messageEl.style.display = 'none';
+        }
+
+        function showConfirmModal() {
+            document.getElementById('confirmModal').classList.add('show');
+        }
+
+        function hideConfirmModal() {
+            document.getElementById('confirmModal').classList.remove('show');
+        }
+
+        function confirmSaveConfig() {
+            showConfirmModal();
+        }
+
+        function cancelConfirm() {
+            hideConfirmModal();
+        }
+
+        function proceedSave() {
+            hideConfirmModal();
+            saveConfig();
         }
 
         function parseTime12To24(value) {
@@ -425,8 +591,7 @@ $config = $config ?? [];
             const formData = {
                 working_days: document.getElementById('working_days').value,
                 day_start_time: document.getElementById('start_time').value.trim(),
-                day_end_time: document.getElementById('end_time').value.trim(),
-                grace_minutes: document.getElementById('grace_minutes').value
+                day_end_time: document.getElementById('end_time').value.trim()
             };
 
             const workingDays = parseInt(formData.working_days, 10);
@@ -466,11 +631,6 @@ $config = $config ?? [];
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                     body: JSON.stringify({ value: formData.day_end_time })
-                }),
-                fetch('<?php echo e(url('principal/config')); ?>/grace_minutes', {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                    body: JSON.stringify({ value: formData.grace_minutes })
                 })
             ];
 
@@ -483,8 +643,16 @@ $config = $config ?? [];
                 const failedResponse = responses.find(r => !r.ok);
                 if (failedResponse) {
                     try {
-                        const payload = await failedResponse.json();
-                        showConfigMessage(payload.message || 'Error saving configuration. Please try again.', true);
+                        const contentType = failedResponse.headers.get('content-type') || '';
+                        if (contentType.includes('application/json')) {
+                            const payload = await failedResponse.json();
+                            showConfigMessage(payload.message || 'Error saving configuration. Please try again.', true);
+                            return;
+                        }
+
+                        const text = await failedResponse.text();
+                        const trimmed = text.trim().slice(0, 200);
+                        showConfigMessage(`Error ${failedResponse.status}: ${trimmed || 'Request failed.'}`, true);
                     } catch (error) {
                         showConfigMessage('Error saving configuration. Please try again.', true);
                     }
@@ -561,6 +729,23 @@ $config = $config ?? [];
         }
 
         document.querySelectorAll('[data-time-picker]').forEach(initTimePicker);
+
+        // Modal close on overlay click
+        document.getElementById('confirmModal').addEventListener('click', (event) => {
+            if (event.target.id === 'confirmModal') {
+                hideConfirmModal();
+            }
+        });
+
+        // Allow Escape key to close modal
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                hideConfirmModal();
+            }
+        });
+
+        // Clear error message on page load (in case it was cached from previous submission)
+        clearConfigMessage();
     </script>
 </div>
 

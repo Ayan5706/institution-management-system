@@ -17,33 +17,33 @@ class HomeController extends BaseController
             'features' => [
                 [
                     'title' => 'Student Management',
-                    'description' => 'Comprehensive student profiles, enrollment tracking, and academic records management.',
-                    'icon' => '👥',
+                    'description' => 'Manage student profiles, enrollment details, and academic records efficiently.',
+                    'icon' => 'user-graduate.png',
                 ],
                 [
                     'title' => 'Attendance Tracking',
-                    'description' => 'Real-time attendance marking, reports, and monitoring for all classes.',
-                    'icon' => '📋',
+                    'description' => 'Track and manage student attendance with real-time updates and reports.',
+                    'icon' => 'attendance.png',
                 ],
                 [
                     'title' => 'Fee Management',
-                    'description' => 'Streamlined fee collection, payment processing, and financial reporting.',
-                    'icon' => '💳',
+                    'description' => 'Handle semester fees, payments, and track pending balances seamlessly.',
+                    'icon' => 'fee.png',
                 ],
                 [
                     'title' => 'Class Scheduling',
-                    'description' => 'Intelligent timetable management with conflict detection and optimization.',
-                    'icon' => '📅',
+                    'description' => 'Create and manage class timetables with structured scheduling.',
+                    'icon' => 'timetable.png',
                 ],
                 [
                     'title' => 'Teacher Management',
-                    'description' => 'Manage teacher assignments, qualifications, and workload distribution.',
-                    'icon' => '🎓',
+                    'description' => 'Manage teacher profiles, subject assignments, and workload distribution.',
+                    'icon' => 'teacher.png',
                 ],
                 [
                     'title' => 'Reporting & Analytics',
-                    'description' => 'Generate insightful reports on attendance, academics, and finances.',
-                    'icon' => '📊',
+                    'description' => 'Generate reports on student performance, attendance, and financial data.',
+                    'icon' => 'bar-chart.png',
                 ],
             ],
         ]);

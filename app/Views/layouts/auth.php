@@ -125,6 +125,14 @@ $heroDescription = $heroDescription ?? 'A focused administration interface for p
             object-fit: cover;
         }
 
+        .brand-mark svg {
+            width: 64%;
+            height: 64%;
+            display: block;
+            fill: currentColor;
+            transform: translateY(-1px);
+        }
+
         .brand h2 {
             margin: 0;
             font-size: 1.35rem;
@@ -208,7 +216,9 @@ $heroDescription = $heroDescription ?? 'A focused administration interface for p
             <a class="back-link" href="<?php echo e(url('/')); ?>">← Back to Home</a>
             <div class="brand">
                 <div class="brand-mark">
-                    <img src="/assets/images/logo-eduhub.svg" alt="IMS logo">
+                    <svg viewBox="0 0 64 64" role="img" aria-label="Bank">
+                        <path d="M4 26l28-14 28 14v6H4v-6zm6 12h6v18h-6V38zm12 0h6v18h-6V38zm12 0h6v18h-6V38zm12 0h6v18h-6V38zM6 58h52v4H6v-4z"/>
+                    </svg>
                 </div>
                 <div>
                     <h2><?php echo e($title); ?></h2>

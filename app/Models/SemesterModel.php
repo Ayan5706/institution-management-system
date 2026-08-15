@@ -14,6 +14,10 @@ final class SemesterModel extends BaseModel
         'academic_year',
         'is_current',
         'fee_amount',
+        'start_date',
+        'end_date',
+        'start_academic_year',
+        'end_academic_year',
     ];
 
     /** @return array<int, array<string, mixed>> */

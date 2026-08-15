@@ -217,7 +217,7 @@ if ($selected_program_id === 0 && !empty($programs)) {
                 </select>
             </div>
             <div class="fees-field">
-                <label for="semesterFeeInput">Semester Fee (₱)</label>
+                <label for="semesterFeeInput">Semester Fee (₹)</label>
                 <input type="number" id="semesterFeeInput" min="0" step="0.01" placeholder="Enter fee amount">
             </div>
             <div class="fees-field" style="display: flex; align-items: flex-end;">
@@ -254,7 +254,7 @@ if ($selected_program_id === 0 && !empty($programs)) {
                 </select>
             </div>
             <div class="fees-field">
-                <label for="registrationSearch">Registration #</label>
+                <label for="registrationSearch">Registration</label>
                 <input type="text" id="registrationSearch" placeholder="Search registration number">
             </div>
             <div class="fees-field" style="display: flex; align-items: flex-end;">
@@ -269,7 +269,7 @@ if ($selected_program_id === 0 && !empty($programs)) {
                 <thead>
                     <tr>
                         <th>Student</th>
-                        <th>Registration #</th>
+                        <th>Registration</th>
                         <th>Semester</th>
                         <th>Fee</th>
                         <th>Paid</th>
@@ -290,7 +290,7 @@ if ($selected_program_id === 0 && !empty($programs)) {
             <div class="detail-grid" id="studentDetailGrid"></div>
             <div class="fees-grid">
                 <div class="fees-field">
-                    <label for="paymentAmountInput">Payment Amount (₱)</label>
+                    <label for="paymentAmountInput">Payment Amount (₹)</label>
                     <input type="number" id="paymentAmountInput" min="0" step="0.01" placeholder="Enter new payment">
                 </div>
                 <div class="fees-field" style="display: flex; align-items: flex-end;">
@@ -397,9 +397,9 @@ function renderStudentTable(rows) {
             <td>${row.student_name}</td>
             <td>${row.registration_number}</td>
             <td>${row.semester_label}</td>
-            <td>₱${Number(row.fee_amount).toFixed(2)}</td>
-            <td>₱${Number(row.amount_paid).toFixed(2)}</td>
-            <td>₱${Number(row.pending).toFixed(2)}</td>
+            <td>₹${Number(row.fee_amount).toFixed(2)}</td>
+            <td>₹${Number(row.amount_paid).toFixed(2)}</td>
+            <td>₹${Number(row.pending).toFixed(2)}</td>
             <td><span class="badge ${row.status === 'PAID' ? 'badge-paid' : 'badge-pending'}">${row.status}</span></td>
             <td><button class="btn-primary" data-fee-id="${row.fee_id}">Select</button></td>
         `;
@@ -417,12 +417,12 @@ function selectStudentFee(feeId) {
     studentDetailCard.style.display = 'grid';
     studentDetailGrid.innerHTML = `
         <div class="detail-item"><span>Student</span><strong>${selectedFee.student_name}</strong></div>
-        <div class="detail-item"><span>Registration #</span><strong>${selectedFee.registration_number}</strong></div>
+        <div class="detail-item"><span>Registration</span><strong>${selectedFee.registration_number}</strong></div>
         <div class="detail-item"><span>Semester</span><strong>${selectedFee.semester_label}</strong></div>
         <div class="detail-item"><span>Status</span><strong>${selectedFee.status}</strong></div>
-        <div class="detail-item"><span>Semester Fee</span><strong>₱${Number(selectedFee.fee_amount).toFixed(2)}</strong></div>
-        <div class="detail-item"><span>Paid</span><strong>₱${Number(selectedFee.amount_paid).toFixed(2)}</strong></div>
-        <div class="detail-item"><span>Pending</span><strong>₱${Number(selectedFee.pending).toFixed(2)}</strong></div>
+        <div class="detail-item"><span>Semester Fee</span><strong>₹${Number(selectedFee.fee_amount).toFixed(2)}</strong></div>
+        <div class="detail-item"><span>Paid</span><strong>₹${Number(selectedFee.amount_paid).toFixed(2)}</strong></div>
+        <div class="detail-item"><span>Pending</span><strong>₹${Number(selectedFee.pending).toFixed(2)}</strong></div>
     `;
 
     paymentAmountInput.value = '';

@@ -2,14 +2,19 @@
 /** @var array $subjects */
 /** @var array $attendance_records */
 /** @var array $filters */
+$subjects = $subjects ?? [];
+$attendance_records = $attendance_records ?? [];
+$filters = $filters ?? ['subject_id' => 0, 'from_date' => '', 'to_date' => ''];
+$activeNav = 'teacher/attendance/history';
 ?>
 <?php ob_start(); ?>
 <style>
     .filter-section {
-        background: #f1f5f9;
+        background: #f4f7f9;
         padding: 16px;
         border-radius: 12px;
         margin-bottom: 20px;
+        border: 1px solid #d6e0e6;
     }
 
     .filter-grid {
@@ -34,18 +39,9 @@
     .filter-input,
     .filter-select {
         padding: 8px 10px;
-        border: 1px solid #dbe4f0;
-        border-radius: 8px;
+        border-radius: 10px;
         font-size: 0.9rem;
-        background: #fff;
         font-family: inherit;
-    }
-
-    .filter-input:focus,
-    .filter-select:focus {
-        outline: 0;
-        border-color: #2563eb;
-        background: #f8fbff;
     }
 
     .filter-buttons {
@@ -53,61 +49,24 @@
         gap: 8px;
     }
 
-    .btn {
+    .filter-buttons .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         padding: 8px 14px;
-        border-radius: 8px;
-        border: 1px solid transparent;
-        cursor: pointer;
+        border-radius: 10px;
         font-weight: 600;
-        font-size: 0.85rem;
-        transition: all 0.2s;
+        min-height: 38px;
     }
 
-    .btn-primary {
-        background: linear-gradient(135deg, #2563eb, #0d9488);
-        color: #fff;
-    }
-
-    .btn-primary:hover {
-        opacity: 0.9;
-    }
-
-    .btn-secondary {
-        background: #fff;
+    .filter-buttons .btn-ghost {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
         color: #0f172a;
-        border: 1px solid #dbe4f0;
     }
 
-    .btn-secondary:hover {
-        background: #f8fbff;
-        border-color: #2563eb;
-    }
-
-    .attendance-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .attendance-table thead {
-        background: #f1f5f9;
-        border-bottom: 2px solid #dbe4f0;
-    }
-
-    .attendance-table th {
-        padding: 12px;
-        text-align: left;
-        font-weight: 600;
-        color: #0f172a;
-        font-size: 0.9rem;
-    }
-
-    .attendance-table td {
-        padding: 12px;
-        border-bottom: 1px solid #e2e8f0;
-    }
-
-    .attendance-table tbody tr:hover {
-        background: #f8fbff;
+    .filter-buttons .btn-ghost:hover {
+        background: #f8fafc;
     }
 
     .date-cell {
@@ -148,6 +107,11 @@
         color: #7f1d1d;
     }
 
+    .count-late {
+        background: #ffedd5;
+        color: #9a3412;
+    }
+
     .empty-state {
         padding: 40px;
         text-align: center;
@@ -163,13 +127,6 @@
         .filter-grid {
             grid-template-columns: repeat(2, 1fr);
         }
-        .attendance-table {
-            font-size: 0.85rem;
-        }
-        .attendance-table th,
-        .attendance-table td {
-            padding: 8px;
-        }
     }
 
     @media (max-width: 640px) {
@@ -182,13 +139,6 @@
         .filter-buttons .btn {
             width: 100%;
         }
-        .attendance-table {
-            font-size: 0.75rem;
-        }
-        .attendance-table th,
-        .attendance-table td {
-            padding: 6px;
-        }
     }
 </style>
 
@@ -198,7 +148,7 @@
             <h2 style="margin:0 0 6px;">Attendance History</h2>
             <div style="color:#64748b;">View and filter past attendance records</div>
         </div>
-        <a href="<?php echo e(url('teacher/dashboard')); ?>" class="btn btn-secondary">
+        <a href="<?php echo e(url('teacher/dashboard')); ?>" class="btn btn-ghost">
             Back to Dashboard
         </a>
     </div>
@@ -210,7 +160,6 @@
         <div class="table-view-meta" id="attendanceHistoryMeta"></div>
     </div>
 
-    <!-- Filter Section -->
     <div class="filter-section">
         <form method="GET" action="<?php echo e(url('teacher/attendance/history')); ?>">
             <div class="filter-grid">
@@ -219,8 +168,8 @@
                     <select name="subject_id" class="filter-select">
                         <option value="">All Subjects</option>
                         <?php foreach ($subjects as $subject): ?>
-                            <option value="<?php echo e($subject['id']); ?>" 
-                                    <?php echo $filters['subject_id'] == $subject['id'] ? 'selected' : ''; ?>>
+                            <option value="<?php echo e($subject['id']); ?>"
+                                    <?php echo (string) $filters['subject_id'] === (string) $subject['id'] ? 'selected' : ''; ?>>
                                 <?php echo e($subject['subject_code']); ?> - <?php echo e($subject['subject_name']); ?>
                             </option>
                         <?php endforeach; ?>
@@ -229,13 +178,13 @@
 
                 <div class="filter-group">
                     <label class="filter-label">From Date</label>
-                    <input type="date" name="from_date" class="filter-input" 
+                    <input type="date" name="from_date" class="filter-input"
                            value="<?php echo e($filters['from_date']); ?>">
                 </div>
 
                 <div class="filter-group">
                     <label class="filter-label">To Date</label>
-                    <input type="date" name="to_date" class="filter-input" 
+                    <input type="date" name="to_date" class="filter-input"
                            value="<?php echo e($filters['to_date']); ?>">
                 </div>
 
@@ -243,7 +192,7 @@
                     <label class="filter-label">&nbsp;</label>
                     <div class="filter-buttons">
                         <button type="submit" class="btn btn-primary">Filter</button>
-                        <a href="<?php echo e(url('teacher/attendance/history')); ?>" class="btn btn-secondary" style="text-align: center;">
+                        <a href="<?php echo e(url('teacher/attendance/history')); ?>" class="btn btn-ghost" style="text-align: center;">
                             Reset
                         </a>
                     </div>
@@ -252,60 +201,65 @@
         </form>
     </div>
 
-    <!-- Attendance Records Table -->
     <?php if (!empty($attendance_records)): ?>
-        <div class="table-container" style="overflow-x: auto;">
-        <table class="attendance-table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Subject</th>
-                    <th>Class</th>
-                    <th style="text-align: center;">Total Students</th>
-                    <th style="text-align: center;">Present</th>
-                    <th style="text-align: center;">Absent</th>
-                </tr>
-            </thead>
-            <tbody id="attendanceHistoryTableBody">
-                <?php foreach ($attendance_records as $record): ?>
-                    <tr data-search="<?php echo e(trim(
-                        date('M d, Y', strtotime($record['date'])) . ' ' .
-                        ($record['subject_name'] ?? '') . ' ' .
-                        ($record['subject_code'] ?? '') . ' ' .
-                        ($record['academic_year'] ?? '') . ' semester ' . ($record['semester_number'] ?? '')
-                    )); ?>">
-                        <td>
-                            <div class="date-cell">
-                                <?php echo e(date('M d, Y', strtotime($record['date']))); ?>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="subject-cell"><?php echo e($record['subject_name']); ?></div>
-                            <div class="subject-meta"><?php echo e($record['subject_code']); ?></div>
-                        </td>
-                        <td>
-                            <div class="subject-cell"><?php echo e($record['academic_year']); ?></div>
-                            <div class="subject-meta">Semester <?php echo e($record['semester_number']); ?></div>
-                        </td>
-                        <td style="text-align: center;">
-                            <span class="count-badge count-total">
-                                <?php echo e($record['total_students']); ?>
-                            </span>
-                        </td>
-                        <td style="text-align: center;">
-                            <span class="count-badge count-present">
-                                <?php echo e($record['present_count']); ?>
-                            </span>
-                        </td>
-                        <td style="text-align: center;">
-                            <span class="count-badge count-absent">
-                                <?php echo e($record['absent_count']); ?>
-                            </span>
-                        </td>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Subject</th>
+                        <th>Class</th>
+                        <th style="text-align: center;">Total Students</th>
+                        <th style="text-align: center;">Present</th>
+                        <th style="text-align: center;">Absent</th>
+                        <th style="text-align: center;">Late</th>
                     </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+                </thead>
+                <tbody id="attendanceHistoryTableBody">
+                    <?php foreach ($attendance_records as $record): ?>
+                        <tr data-search="<?php echo e(trim(
+                            date('M d, Y', strtotime($record['date'])) . ' ' .
+                            ($record['subject_name'] ?? '') . ' ' .
+                            ($record['subject_code'] ?? '') . ' ' .
+                            ($record['academic_year'] ?? '') . ' semester ' . ($record['semester_number'] ?? '')
+                        )); ?>">
+                            <td>
+                                <div class="date-cell">
+                                    <?php echo e(date('M d, Y', strtotime($record['date']))); ?>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="subject-cell"><?php echo e($record['subject_name']); ?></div>
+                                <div class="subject-meta"><?php echo e($record['subject_code']); ?></div>
+                            </td>
+                            <td>
+                                <div class="subject-cell"><?php echo e($record['academic_year']); ?></div>
+                                <div class="subject-meta">Semester <?php echo e($record['semester_number']); ?></div>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="count-badge count-total">
+                                    <?php echo e($record['total_students']); ?>
+                                </span>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="count-badge count-present">
+                                    <?php echo e($record['present_count']); ?>
+                                </span>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="count-badge count-absent">
+                                    <?php echo e($record['absent_count']); ?>
+                                </span>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="count-badge count-late">
+                                    <?php echo e($record['late_count'] ?? 0); ?>
+                                </span>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
 
         <div class="table-view-pagination" id="attendanceHistoryPager" style="margin-top: 14px;">
@@ -320,7 +274,7 @@
             <div class="empty-state-icon">📊</div>
             <p>No attendance records found</p>
             <p style="font-size: 0.9rem;">
-                <?php 
+                <?php
                 if (!empty($filters['subject_id']) || !empty($filters['from_date']) || !empty($filters['to_date'])) {
                     echo 'Try adjusting your filter criteria.';
                 } else {
@@ -343,7 +297,7 @@
         prevId: 'attendanceHistoryPrev',
         nextId: 'attendanceHistoryNext',
         pageSize: 10,
-        noResultsColSpan: 6
+        noResultsColSpan: 7
     });
 </script>
 

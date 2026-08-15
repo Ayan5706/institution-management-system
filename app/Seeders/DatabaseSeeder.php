@@ -27,6 +27,7 @@ class DatabaseSeeder
             SubjectsTableSeeder::class,
             TeacherAssignmentsTableSeeder::class,
             StudentProfilesTableSeeder::class,
+            TimetablesTableSeeder::class,
         ];
 
         foreach ($seeders as $seederClass) {

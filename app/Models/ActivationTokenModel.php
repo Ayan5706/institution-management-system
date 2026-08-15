@@ -37,4 +37,26 @@ final class ActivationTokenModel extends BaseModel
         $stmt->execute(['user_id' => $userId, 'created_by' => $userId]);
         return (bool) $stmt->fetchColumn();
     }
+
+    public function hasActiveTokenForUser(int $userId): bool
+    {
+        $stmt = $this->db()->prepare(
+            'SELECT id FROM activation_tokens WHERE user_id = :user_id AND used_at IS NULL AND expires_at >= UTC_TIMESTAMP() LIMIT 1'
+        );
+        $stmt->execute(['user_id' => $userId]);
+        return (bool) $stmt->fetchColumn();
+    }
+
+    public function invalidateUnusedTokensForUser(int $userId): int
+    {
+        $stmt = $this->db()->prepare(
+            'UPDATE activation_tokens SET used_at = :used_at WHERE user_id = :user_id AND used_at IS NULL'
+        );
+        $stmt->execute([
+            'user_id' => $userId,
+            'used_at' => gmdate('Y-m-d H:i:s'),
+        ]);
+
+        return $stmt->rowCount();
+    }
 }

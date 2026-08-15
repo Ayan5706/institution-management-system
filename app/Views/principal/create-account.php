@@ -216,7 +216,7 @@ $pageSubtitle = $pageSubtitle ?? 'Add new VP, Manager, or Accountant';
                 <label class="form-label" for="roleSelect">
                     Role <span class="form-required">*</span>
                 </label>
-                <select class="form-select" id="roleSelect" name="role" required onchange="clearErrors()">
+                <select class="form-select" id="roleSelect" name="role" required>
                     <option value="">-- Select Role --</option>
                     <option value="VP">Vice Principal (VP)</option>
                     <option value="MANAGER">Academic Manager</option>
@@ -229,7 +229,7 @@ $pageSubtitle = $pageSubtitle ?? 'Add new VP, Manager, or Accountant';
                 <label class="form-label" for="loginId">
                     Login ID <span class="form-required">*</span>
                 </label>
-                <input type="text" class="form-input" id="loginId" name="login_id" placeholder="e.g., vp001" required onchange="clearErrors()">
+                <input type="text" class="form-input" id="loginId" name="login_id" placeholder="Select a role" readonly required>
                 <div class="error-message" id="loginIdError"></div>
             </div>
 
@@ -237,7 +237,7 @@ $pageSubtitle = $pageSubtitle ?? 'Add new VP, Manager, or Accountant';
                 <label class="form-label" for="fullName">
                     Full Name <span class="form-required">*</span>
                 </label>
-                <input type="text" class="form-input" id="fullName" name="full_name" placeholder="e.g., John Doe" required onchange="clearErrors()">
+                <input type="text" class="form-input" id="fullName" name="full_name" placeholder="e.g., John Doe" required>
                 <div class="error-message" id="fullNameError"></div>
             </div>
 
@@ -245,16 +245,8 @@ $pageSubtitle = $pageSubtitle ?? 'Add new VP, Manager, or Accountant';
                 <label class="form-label" for="email">
                     Email <span class="form-required">*</span>
                 </label>
-                <input type="email" class="form-input" id="email" name="email" placeholder="e.g., john@example.com" required onchange="clearErrors()">
+                <input type="email" class="form-input" id="email" name="email" placeholder="e.g., john@example.com" required>
                 <div class="error-message" id="emailError"></div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="phone">
-                    Phone Number
-                </label>
-                <input type="tel" class="form-input" id="phone" name="phone" placeholder="e.g., 09170000001" onchange="clearErrors()">
-                <div class="error-message" id="phoneError"></div>
             </div>
 
             <div class="form-actions">
@@ -283,10 +275,114 @@ $pageSubtitle = $pageSubtitle ?? 'Add new VP, Manager, or Accountant';
         });
     }
 
+    function validateFullName(value) {
+        if (value === '') {
+            return { valid: false, message: 'Full Name is required.' };
+        }
+        if (!/^[a-zA-Z\s]+$/.test(value)) {
+            return { valid: false, message: 'Please enter your complete name (e.g., John Doe).' };
+        }
+        if (value.trim().length < 2) {
+            return { valid: false, message: 'Full Name must be at least 2 characters.' };
+        }
+        return { valid: true, message: '' };
+    }
+
+    function validateEmail(value) {
+        if (value === '') {
+            return { valid: false, message: 'Email is required.' };
+        }
+        if (!/^[a-zA-Z0-9]+@gmail\.com$/i.test(value)) {
+            return { valid: false, message: 'Please enter a valid email.' };
+        }
+        return { valid: true, message: '' };
+    }
+
+    function showFieldError(fieldName, message) {
+        const errorEl = document.getElementById(fieldName + 'Error');
+        const inputEl = document.getElementById(fieldName);
+        
+        if (errorEl) {
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+        }
+        if (inputEl) {
+            inputEl.classList.add('error-input');
+        }
+    }
+
+    function clearFieldError(fieldName) {
+        const errorEl = document.getElementById(fieldName + 'Error');
+        const inputEl = document.getElementById(fieldName);
+        
+        if (errorEl) {
+            errorEl.textContent = '';
+            errorEl.classList.remove('show');
+        }
+        if (inputEl) {
+            inputEl.classList.remove('error-input');
+        }
+    }
+
+    function validateField(fieldName) {
+        const inputEl = document.getElementById(fieldName);
+        if (!inputEl) return true;
+
+        let validation;
+        switch (fieldName) {
+            case 'fullName':
+                validation = validateFullName(inputEl.value);
+                break;
+            case 'email':
+                validation = validateEmail(inputEl.value);
+                break;
+            default:
+                return true;
+        }
+
+        if (validation.valid) {
+            clearFieldError(fieldName);
+        } else {
+            showFieldError(fieldName, validation.message);
+        }
+
+        return validation.valid;
+    }
+
+    // Attach blur listeners for real-time validation
+    document.addEventListener('DOMContentLoaded', function() {
+        ['fullName', 'email'].forEach(fieldName => {
+            const inputEl = document.getElementById(fieldName);
+            if (inputEl) {
+                inputEl.addEventListener('blur', function() {
+                    validateField(fieldName);
+                });
+                inputEl.addEventListener('input', function() {
+                    // Clear error on input if it was previously shown
+                    if (this.classList.contains('error-input')) {
+                        clearFieldError(fieldName);
+                    }
+                });
+            }
+        });
+    });
+
     function handleSubmit(event) {
         event.preventDefault();
         clearErrors();
         clearCreateMessage();
+
+        // Validate all fields before submitting
+        let isFormValid = true;
+        ['fullName', 'email'].forEach(fieldName => {
+            if (!validateField(fieldName)) {
+                isFormValid = false;
+            }
+        });
+
+        if (!isFormValid) {
+            return;
+        }
 
         const form = document.getElementById('createAccountForm');
         const submitBtn = document.getElementById('submitBtn');
@@ -305,10 +401,8 @@ $pageSubtitle = $pageSubtitle ?? 'Add new VP, Manager, or Accountant';
             },
             credentials: 'same-origin',
             body: JSON.stringify({
-                login_id: formData.get('login_id'),
                 full_name: formData.get('full_name'),
                 email: formData.get('email'),
-                phone: formData.get('phone'),
                 role: formData.get('role')
             })
         })
@@ -375,6 +469,44 @@ $pageSubtitle = $pageSubtitle ?? 'Add new VP, Manager, or Accountant';
         banner.textContent = '';
         banner.style.display = 'none';
     }
+
+    function refreshLoginId() {
+        const roleSelect = document.getElementById('roleSelect');
+        const loginIdInput = document.getElementById('loginId');
+        if (!roleSelect || !loginIdInput) return;
+
+        const role = roleSelect.value;
+        if (!role) {
+            loginIdInput.value = '';
+            loginIdInput.placeholder = 'Select a role';
+            return;
+        }
+
+        loginIdInput.value = 'Loading...';
+
+        fetch(`<?php echo e(url('principal/accounts/next-login-id')); ?>?role=${encodeURIComponent(role)}`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data && data.data.login_id) {
+                loginIdInput.value = data.data.login_id;
+            } else {
+                loginIdInput.value = '';
+                showCreateMessage(data.message || 'Unable to generate login ID.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            loginIdInput.value = '';
+            showCreateMessage(`Error generating login ID: ${error.message}`);
+        });
+    }
+
+    document.getElementById('roleSelect')?.addEventListener('change', refreshLoginId);
 </script>
 
 <?php

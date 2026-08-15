@@ -166,7 +166,9 @@ $programs = $programs ?? [];
             display: flex;
             gap: 12px;
             margin: 10px 0 18px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            align-items: center;
+            overflow-x: auto;
         }
 
         .filter-input,
@@ -176,6 +178,16 @@ $programs = $programs ?? [];
             border-radius: 6px;
             font-size: 0.95rem;
             background: #fff;
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .filter-input {
+            cursor: text;
+        }
+
+        .filter-select {
+            cursor: pointer;
         }
 
         @media (max-width: 768px) {

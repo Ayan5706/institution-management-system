@@ -1,7 +1,18 @@
 <?php
 /** @var array $programs */
+/** @var array $semesters */
 $activeNav = 'students';
 $programs = $programs ?? [];
+$semesters = $semesters ?? [];
+
+$semesterNumbers = [];
+foreach ($semesters as $semester) {
+    if (!empty($semester['semester_number'])) {
+        $semesterNumbers[] = (string) $semester['semester_number'];
+    }
+}
+$semesterNumbers = array_values(array_unique($semesterNumbers));
+sort($semesterNumbers);
 ?>
 <?php ob_start(); ?>
 <div class="card content-card">
@@ -336,6 +347,12 @@ $programs = $programs ?? [];
                 <option value="<?php echo e($program['program_code'] ?? ''); ?>"><?php echo e($program['program_name'] ?? ''); ?></option>
             <?php endforeach; ?>
         </select>
+        <select class="filter-select table-view-field" id="semesterFilter">
+            <option value="">All Semesters</option>
+            <?php foreach ($semesterNumbers as $number): ?>
+                <option value="<?php echo e($number); ?>">Semester <?php echo e($number); ?></option>
+            <?php endforeach; ?>
+        </select>
         <select class="filter-select table-view-field" id="statusFilter">
             <option value="">All Status</option>
             <option value="active">Active</option>
@@ -400,23 +417,9 @@ $programs = $programs ?? [];
                 <div class="error-message" id="fullNameError"></div>
             </div>
             <div class="form-group">
-                <label for="registrationNumber">Registration Number *</label>
-                <input type="text" id="registrationNumber" name="registration_number" required>
-                <div class="error-message" id="registrationNumberError"></div>
-            </div>
-            <div class="form-group">
                 <label for="email">Email *</label>
                 <input type="email" id="email" name="email" required>
                 <div class="error-message" id="emailError"></div>
-            </div>
-            <div class="form-group">
-                <label for="phone">Phone</label>
-                <input type="tel" id="phone" name="phone">
-            </div>
-            <div class="form-group">
-                <label for="dateOfBirth">Date of Birth *</label>
-                <input type="date" id="dateOfBirth" name="date_of_birth" required>
-                <div class="error-message" id="dateOfBirthError"></div>
             </div>
             <div class="form-group">
                 <label for="programId">Program *</label>
@@ -460,6 +463,7 @@ $programs = $programs ?? [];
                         searchInputId: 'searchInput',
                         filters: [
                             { id: 'programFilter', rowDatasetKey: 'program' },
+                            { id: 'semesterFilter', rowDatasetKey: 'semester' },
                             { id: 'statusFilter', rowDatasetKey: 'status' },
                         ],
                         metaId: 'studentsMeta',
@@ -490,7 +494,8 @@ $programs = $programs ?? [];
         }
 
         tbody.innerHTML = students.map(student => `
-            <tr data-program="${escapeHtml(String(student.program_code || ''))}"
+                <tr data-program="${escapeHtml(String(student.program_code || ''))}"
+                    data-semester="${escapeHtml(String(student.semester_number || ''))}"
                 data-status="${escapeHtml(String(student.status || ''))}"
                 data-search="${escapeHtml(`${student.name || ''} ${student.registration_number || ''}`.trim())}">
                 <td>${escapeHtml(student.registration_number)}</td>
@@ -559,10 +564,6 @@ $programs = $programs ?? [];
     function submitAddStudent() {
         const formData = new FormData(document.getElementById('addStudentForm'));
         const data = Object.fromEntries(formData);
-
-        if (data.registration_number) {
-            data.login_id = data.registration_number;
-        }
 
         clearErrors();
 

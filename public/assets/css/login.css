@@ -490,6 +490,19 @@
     .auth-right-content {
         max-width: 100%;
     }
+
+    .btn-login {
+        font-size: var(--text-sm);
+        padding: var(--spacing-sm) var(--spacing-lg);
+    }
+
+    .social-login {
+        flex-direction: column;
+    }
+
+    .social-btn {
+        width: 100%;
+    }
 }
 
 @media (max-width: 480px) {

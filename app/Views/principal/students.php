@@ -19,14 +19,28 @@ $semesters = $semesters ?? [];
             display: flex;
             gap: 12px;
             margin: 20px 0;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            align-items: center;
+            overflow-x: auto;
         }
 
+        .filter-bar input[type="text"],
         .filter-select {
             padding: 8px 12px;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
             background: #fff;
+            cursor: pointer;
+            flex: 1;
+            min-width: 150px;
+            font-size: 0.9rem;
+        }
+
+        .filter-bar input[type="text"] {
+            cursor: text;
+        }
+
+        .filter-select {
             cursor: pointer;
         }
 
@@ -41,18 +55,21 @@ $semesters = $semesters ?? [];
             background: #fff;
         }
 
-        th {
+        #studentsTable th {
             background: #f8fafc;
             padding: 14px;
-            text-align: left;
+            text-align: center;
             font-weight: 700;
             border-bottom: 2px solid #e2e8f0;
             color: #475569;
+            vertical-align: middle;
         }
 
-        td {
+        #studentsTable td {
             padding: 14px;
             border-bottom: 1px solid #e2e8f0;
+            text-align: center;
+            vertical-align: middle;
         }
 
         tr:hover {
@@ -102,11 +119,16 @@ $semesters = $semesters ?? [];
         .view-btn:hover {
             background: #e2e8f0;
         }
+
+        .action-col {
+            text-align: center;
+            white-space: nowrap;
+        }
     </style>
 
     <div class="table-view-header">
         <div class="filter-bar table-view-controls">
-        <input type="text" id="searchInput" class="table-view-field" placeholder="Search students..." style="padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0; width:240px;">
+        <input type="text" id="searchInput" class="table-view-field" placeholder="Search students...">
         <select class="filter-select table-view-field" id="programFilter">
             <option value="">All Programs</option>
             <?php foreach ($programs ?? [] as $program): ?>
@@ -139,7 +161,7 @@ $semesters = $semesters ?? [];
                     <th>Program</th>
                     <th>Semester</th>
                     <th>Status</th>
-                    <th>Action</th>
+                    <th class="action-col">Action</th>
                 </tr>
             </thead>
             <tbody id="studentsTableBody">
@@ -229,7 +251,7 @@ $semesters = $semesters ?? [];
                         ${student.is_active ? 'Active' : 'Inactive'}
                     </span>
                 </td>
-                <td>
+                <td class="action-col">
                     <a class="view-btn" href="${detailBase}/${student.id}">View</a>
                 </td>
             </tr>

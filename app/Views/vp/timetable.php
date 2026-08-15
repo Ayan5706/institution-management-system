@@ -10,6 +10,24 @@ $assignments = $assignments ?? [];
 $working_days = $working_days ?? [];
 $day_start_time = $day_start_time ?? '';
 $day_end_time = $day_end_time ?? '';
+
+$programsList = [];
+$semestersList = [];
+foreach ($assignments as $assign) {
+    if (!empty($assign['program_id']) && !empty($assign['program_name'])) {
+        if (!isset($programsList[$assign['program_id']])) {
+            $programsList[$assign['program_id']] = $assign['program_name'];
+        }
+    }
+    if (!empty($assign['semester_id']) && !empty($assign['semester_number'])) {
+        if (!isset($semestersList[$assign['semester_id']])) {
+            $semestersList[$assign['semester_id']] = [
+                'number' => $assign['semester_number'],
+                'year' => $assign['academic_year'] ?? ''
+            ];
+        }
+    }
+}
 ?>
 <?php ob_start(); ?>
 <div class="card content-card">
@@ -23,16 +41,24 @@ $day_end_time = $day_end_time ?? '';
 
     <div class="table-view-header">
         <div class="filter-group table-view-controls">
-            <input type="text" id="timetableSearch" class="table-view-field filter-search" placeholder="Search timetable...">
-            <div class="filter-item">
-                <label for="dayFilter">Day:</label>
-                <select id="dayFilter" class="table-view-field">
-                    <option value="">All Days</option>
-                    <?php foreach ($working_days as $day): ?>
-                        <option value="<?php echo e($day['code']); ?>"><?php echo e($day['label']); ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+            <select id="programFilter" class="table-view-field">
+                <option value="">All Programs</option>
+                <?php foreach ($programsList as $progId => $progName): ?>
+                    <option value="<?php echo e($progName); ?>"><?php echo e($progName); ?></option>
+                <?php endforeach; ?>
+            </select>
+            <select id="semesterFilter" class="table-view-field">
+                <option value="">All Semesters</option>
+                <?php foreach ($semestersList as $semId => $semData): ?>
+                    <option value="<?php echo e($semData['number']); ?>">Sem <?php echo e($semData['number']); ?> (<?php echo e($semData['year']); ?>)</option>
+                <?php endforeach; ?>
+            </select>
+            <select id="dayFilter" class="table-view-field">
+                <option value="">All Days</option>
+                <?php foreach ($working_days as $day): ?>
+                    <option value="<?php echo e($day['code']); ?>"><?php echo e($day['label']); ?></option>
+                <?php endforeach; ?>
+            </select>
         </div>
         <div class="table-view-meta" id="timetableMeta"></div>
     </div>
@@ -501,12 +527,38 @@ $day_end_time = $day_end_time ?? '';
                     </div>
                 </div>
             </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="slotProgram">Program</label>
+                    <select id="slotProgram" required>
+                        <option value="">Select program</option>
+                        <?php foreach ($programsList as $progId => $progName): ?>
+                            <option value="<?php echo e($progId); ?>"><?php echo e($progName); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="slotSemester">Semester</label>
+                    <select id="slotSemester" required>
+                        <option value="">Select semester</option>
+                        <?php foreach ($semestersList as $semId => $semData): ?>
+                            <option value="<?php echo e($semId); ?>">Sem <?php echo e($semData['number']); ?> (<?php echo e($semData['year']); ?>)</option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
             <div class="form-group">
                 <label for="slotAssignment">Teacher & Subject</label>
-                <select id="slotAssignment" name="teacher_assignment_id" required>
-                    <option value="">Select teacher-subject assignment</option>
+                <select id="slotAssignment" name="teacher_assignment_id" required disabled>
+                    <option value="">Select program and semester first</option>
                     <?php foreach ($assignments as $assign): ?>
-                        <option value="<?php echo e($assign['id']); ?>"><?php echo e($assign['teacher_name']); ?> - <?php echo e($assign['subject_name']); ?> (<?php echo e($assign['subject_code']); ?>)</option>
+                        <option
+                            value="<?php echo e($assign['id']); ?>"
+                            data-program="<?php echo e($assign['program_id']); ?>"
+                            data-semester="<?php echo e($assign['semester_id']); ?>"
+                        >
+                            <?php echo e($assign['teacher_name']); ?> - <?php echo e($assign['subject_name']); ?> (<?php echo e($assign['subject_code']); ?>)
+                        </option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -539,7 +591,10 @@ $day_end_time = $day_end_time ?? '';
                 </thead>
                 <tbody id="timetableTableBody">
                     <?php foreach ($timetable as $slot): ?>
-                        <tr data-search="<?php echo e(trim(($slot['day'] ?? '') . ' ' . ($slot['start_time'] ?? '') . ' ' . ($slot['end_time'] ?? '') . ' ' . ($slot['teacher_name'] ?? '') . ' ' . ($slot['subject_name'] ?? '') . ' ' . ($slot['subject_code'] ?? '') . ' ' . ($slot['program_name'] ?? ''))); ?>">
+                        <tr data-search="<?php echo e(trim(($slot['day'] ?? '') . ' ' . ($slot['start_time'] ?? '') . ' ' . ($slot['end_time'] ?? '') . ' ' . ($slot['teacher_name'] ?? '') . ' ' . ($slot['subject_name'] ?? '') . ' ' . ($slot['subject_code'] ?? '') . ' ' . ($slot['program_name'] ?? '') . ' ' . ($slot['semester_number'] ?? ''))); ?>"
+                            data-program="<?php echo e($slot['program_name'] ?? ''); ?>"
+                            data-semester="<?php echo e($slot['semester_number'] ?? ''); ?>"
+                            data-day="<?php echo e($slot['day'] ?? ''); ?>">
                             <td><span class="day-badge"><?php echo e(ucfirst($slot['day'] ?? 'N/A')); ?></span></td>
                             <td><?php echo e($slot['start_time'] ?? 'N/A'); ?></td>
                             <td><?php echo e($slot['end_time'] ?? 'N/A'); ?></td>
@@ -580,7 +635,11 @@ $day_end_time = $day_end_time ?? '';
     <script>
         window.IMS?.initTableView({
             tbodyId: 'timetableTableBody',
-            searchInputId: 'timetableSearch',
+            filters: [
+                { id: 'programFilter', rowDatasetKey: 'program' },
+                { id: 'semesterFilter', rowDatasetKey: 'semester' },
+                { id: 'dayFilter', rowDatasetKey: 'day' },
+            ],
             metaId: 'timetableMeta',
             pagerId: 'timetablePager',
             pageInfoId: 'timetablePageInfo',
@@ -590,10 +649,65 @@ $day_end_time = $day_end_time ?? '';
             noResultsColSpan: 7,
             noResultsText: 'No matching timetable entries found.',
         });
+
+        function syncAssignmentOptions() {
+            const programSelect = document.getElementById('slotProgram');
+            const semesterSelect = document.getElementById('slotSemester');
+            const assignmentSelect = document.getElementById('slotAssignment');
+
+            if (!programSelect || !semesterSelect || !assignmentSelect) {
+                return;
+            }
+
+            const programId = programSelect.value;
+            const semesterId = semesterSelect.value;
+            const options = Array.from(assignmentSelect.options);
+            let hasVisible = false;
+
+            options.forEach((option, index) => {
+                if (index === 0) {
+                    option.hidden = false;
+                    return;
+                }
+
+                const matchesProgram = option.dataset.program === programId;
+                const matchesSemester = option.dataset.semester === semesterId;
+                const shouldShow = programId && semesterId && matchesProgram && matchesSemester;
+
+                option.hidden = !shouldShow;
+                if (shouldShow) {
+                    hasVisible = true;
+                }
+            });
+
+            if (programId && semesterId) {
+                assignmentSelect.disabled = false;
+                assignmentSelect.options[0].textContent = hasVisible
+                    ? 'Select teacher-subject assignment'
+                    : 'No assignments for selection';
+            } else {
+                assignmentSelect.disabled = true;
+                assignmentSelect.options[0].textContent = 'Select program and semester first';
+            }
+
+            assignmentSelect.value = '';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const programSelect = document.getElementById('slotProgram');
+            const semesterSelect = document.getElementById('slotSemester');
+
+            programSelect?.addEventListener('change', syncAssignmentOptions);
+            semesterSelect?.addEventListener('change', syncAssignmentOptions);
+            syncAssignmentOptions();
+        });
         function toggleAddSlotForm() {
             const form = document.getElementById('addSlotForm');
             form.classList.toggle('active');
             if (form.classList.contains('active')) {
+                document.getElementById('slotProgram').value = '';
+                document.getElementById('slotSemester').value = '';
+                syncAssignmentOptions();
                 document.getElementById('slotDay').focus();
             }
         }
@@ -628,6 +742,11 @@ $day_end_time = $day_end_time ?? '';
 
             if (endMinutes <= startMinutes) {
                 messageDiv.innerHTML = '<div class="error-message">End time must be after start time.</div>';
+                return;
+            }
+
+            if ((endMinutes - startMinutes) < 60) {
+                messageDiv.innerHTML = '<div class="error-message">Class duration must be at least 1 hour.</div>';
                 return;
             }
 

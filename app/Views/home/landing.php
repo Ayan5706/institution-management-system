@@ -1,40 +1,40 @@
 <?php
 /** @var string|null $title */
 /** @var array $features */
-$title = $title ?? 'IMS - Institution Management System';
+$title = $title ?? 'Instituition - Institution Management System';
 $features = $features ?? [];
 
 if ($features === []) {
     $features = [
         [
             'title' => 'Student Management',
-            'description' => 'Manage profiles and enrollments.',
-            'icon' => 'SM',
+                'description' => 'Manage student profiles, enrollment details, and academic records efficiently.',
+                'icon' => 'user-graduate.png',
         ],
         [
             'title' => 'Attendance Tracking',
-            'description' => 'Track attendance and summaries.',
-            'icon' => 'AT',
+                'description' => 'Track and manage student attendance with real-time updates and reports.',
+                'icon' => 'attendance.png',
         ],
         [
             'title' => 'Fee Management',
-            'description' => 'Monitor fees and payments.',
-            'icon' => 'FM',
+                'description' => 'Handle semester fees, payments, and track pending balances seamlessly.',
+                'icon' => 'fee.png',
         ],
         [
             'title' => 'Class Scheduling',
-            'description' => 'Organize timetables quickly.',
-            'icon' => 'CS',
+                'description' => 'Create and manage class timetables with structured scheduling.',
+                'icon' => 'timetable.png',
         ],
         [
             'title' => 'Teacher Management',
-            'description' => 'Assign roles and workloads.',
-            'icon' => 'TM',
+                'description' => 'Manage teacher profiles, subject assignments, and workload distribution.',
+                'icon' => 'teacher.png',
         ],
         [
             'title' => 'Reporting & Analytics',
-            'description' => 'Generate clear insights fast.',
-            'icon' => 'RA',
+                'description' => 'Generate reports on student performance, attendance, and financial data.',
+                'icon' => 'bar-chart.png',
         ],
     ];
 }
@@ -46,9 +46,16 @@ if (!function_exists('renderFeatureCard')) {
         $icon = (string) ($feature['icon'] ?? '');
         $title = (string) ($feature['title'] ?? '');
         $description = (string) ($feature['description'] ?? '');
+        $isImage = str_ends_with($icon, '.png') || str_ends_with($icon, '.svg');
         ?>
         <div class="feature-card">
-            <div class="feature-icon"><?php echo e($icon); ?></div>
+            <div class="feature-icon">
+                <?php if ($isImage): ?>
+                    <img src="<?php echo e(asset('images/icons/' . $icon)); ?>" alt="">
+                <?php else: ?>
+                    <?php echo e($icon); ?>
+                <?php endif; ?>
+            </div>
             <div class="feature-text">
                 <h3 class="feature-title"><?php echo e($title); ?></h3>
                 <p class="feature-description"><?php echo e($description); ?></p>
@@ -98,9 +105,11 @@ if (!function_exists('renderFeatureCard')) {
         }
 
         .page {
-            max-width: 1200px;
+            width: 100%;
+            max-width: none;
+            min-height: 100vh;
             margin: 0 auto;
-            padding: 28px 24px 80px;
+            padding: 28px 32px 80px;
         }
 
         .nav-shell {
@@ -109,7 +118,7 @@ if (!function_exists('renderFeatureCard')) {
         }
 
         .nav {
-            width: min(980px, 100%);
+            width: 100%;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -135,6 +144,13 @@ if (!function_exists('renderFeatureCard')) {
             font-weight: 700;
             text-decoration: none;
             color: var(--text);
+        }
+
+        .brand-mark svg {
+            width: 70%;
+            height: 70%;
+            display: block;
+            fill: currentColor;
         }
 
         .brand-mark {
@@ -182,7 +198,7 @@ if (!function_exists('renderFeatureCard')) {
         }
 
         .content {
-            width: min(980px, 100%);
+            width: 100%;
             margin: 22px auto 0;
             display: grid;
             gap: 22px;
@@ -195,7 +211,7 @@ if (!function_exists('renderFeatureCard')) {
             box-shadow: var(--shadow);
             display: grid;
             grid-template-columns: 1.2fr 0.9fr;
-            gap: 26px;
+            gap: 14px;
             padding: 28px 28px 32px;
             position: relative;
             overflow: hidden;
@@ -262,12 +278,16 @@ if (!function_exists('renderFeatureCard')) {
 
         .hero-illustration {
             align-self: center;
+            justify-self: start;
+            width: max-content;
+            max-width: 100%;
             background: linear-gradient(165deg, #dae4e9, #f6f9fb);
             border-radius: 22px;
             padding: 26px;
             border: 1px solid rgba(160, 176, 185, 0.45);
-            display: grid;
-            gap: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             position: relative;
             overflow: hidden;
         }
@@ -284,10 +304,11 @@ if (!function_exists('renderFeatureCard')) {
 
         .hero-illustration img {
             width: 100%;
-            height: 100%;
-            min-height: 260px;
+            max-width: 420px;
+            height: auto;
+            max-height: 320px;
             border-radius: 18px;
-            object-fit: cover;
+            object-fit: contain;
             position: relative;
             z-index: 1;
             border: 1px solid rgba(160, 176, 185, 0.35);
@@ -356,8 +377,8 @@ if (!function_exists('renderFeatureCard')) {
 
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 8px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
             align-items: stretch;
         }
 
@@ -371,7 +392,7 @@ if (!function_exists('renderFeatureCard')) {
             gap: 6px;
             align-items: start;
             align-content: start;
-            height: 100%;
+            min-height: 120px;
             text-align: left;
         }
 
@@ -402,6 +423,13 @@ if (!function_exists('renderFeatureCard')) {
             font-size: 0.85rem;
         }
 
+        .feature-icon img {
+            width: 22px;
+            height: 22px;
+            object-fit: contain;
+            display: block;
+        }
+
         .feature-title {
             font-size: 1.05rem;
             font-weight: 600;
@@ -428,12 +456,14 @@ if (!function_exists('renderFeatureCard')) {
             font-size: 0.9rem;
         }
 
+        @media (max-width: 1100px) {
+            .features-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
         @media (max-width: 960px) {
             .hero {
-                grid-template-columns: 1fr;
-            }
-
-            .features-grid {
                 grid-template-columns: 1fr;
             }
 
@@ -442,9 +472,15 @@ if (!function_exists('renderFeatureCard')) {
             }
         }
 
+        @media (max-width: 740px) {
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         @media (max-width: 640px) {
             .page {
-                padding: 18px 14px 60px;
+                padding: 18px 16px 60px;
             }
 
             .hero,
@@ -460,9 +496,11 @@ if (!function_exists('renderFeatureCard')) {
             <header class="nav">
                 <a href="<?php echo e(url('/')); ?>" class="brand">
                     <div class="brand-mark">
-                        <img src="/assets/images/logo-eduhub.svg" alt="IMS logo">
+                        <svg viewBox="0 0 64 64" role="img" aria-label="Bank">
+                            <path d="M4 26l28-14 28 14v6H4v-6zm6 12h6v18h-6V38zm12 0h6v18h-6V38zm12 0h6v18h-6V38zm12 0h6v18h-6V38zM6 58h52v4H6v-4z"/>
+                        </svg>
                     </div>
-                    <span>IMS</span>
+                    <span>Instituition</span>
                 </a>
                 <div class="nav-right">
                     <nav class="nav-links" aria-label="Top navigation">
@@ -485,7 +523,7 @@ if (!function_exists('renderFeatureCard')) {
                     </div>
                 </div>
                 <div class="hero-illustration">
-                    <img src="/assets/images/illustrations/college-students.svg" alt="College students collaborating">
+                    <img src="<?php echo e(asset('images/students.png')); ?>" alt="Students collaborating illustration">
                 </div>
             </section>
 
@@ -501,7 +539,7 @@ if (!function_exists('renderFeatureCard')) {
         </div>
 
         <footer class="footer" id="support">
-            <p>IMS Management System. All rights reserved.</p>
+            <p>Instituition Management System. All rights reserved.</p>
         </footer>
     </div>
 </body>

@@ -22,8 +22,9 @@ abstract class BaseModel
     }
 
     /** @return array<int, array<string, mixed>> */
-    public function all(string $orderBy = 'id', string $direction = 'DESC'): array
+    public function all(string $orderBy = '', string $direction = 'ASC'): array
     {
+        $orderBy = $orderBy !== '' ? $orderBy : $this->primaryKey;
         $direction = strtoupper($direction) === 'ASC' ? 'ASC' : 'DESC';
         $orderBy = $this->sanitizeIdentifier($orderBy);
 
@@ -49,8 +50,9 @@ abstract class BaseModel
     {
         $column = $this->sanitizeIdentifier($column);
         $operator = $this->sanitizeOperator($operator);
+        $orderBy = $this->sanitizeIdentifier($this->primaryKey);
 
-        $sql = sprintf('SELECT * FROM `%s` WHERE `%s` %s :value', $this->table, $column, $operator);
+        $sql = sprintf('SELECT * FROM `%s` WHERE `%s` %s :value ORDER BY `%s` ASC', $this->table, $column, $operator, $orderBy);
         $stmt = $this->db()->prepare($sql);
         $stmt->execute(['value' => $value]);
 
@@ -126,12 +128,13 @@ abstract class BaseModel
     }
 
     /** @return array{data: array<int, array<string, mixed>>, total: int, page: int, per_page: int, total_pages: int} */
-    public function paginate(int $page = 1, int $perPage = 15, string $orderBy = 'id', string $direction = 'DESC'): array
+    public function paginate(int $page = 1, int $perPage = 15, string $orderBy = '', string $direction = 'ASC'): array
     {
         $page = max(1, $page);
         $perPage = max(1, $perPage);
         $offset = ($page - 1) * $perPage;
 
+        $orderBy = $orderBy !== '' ? $orderBy : $this->primaryKey;
         $direction = strtoupper($direction) === 'ASC' ? 'ASC' : 'DESC';
         $orderBy = $this->sanitizeIdentifier($orderBy);
 

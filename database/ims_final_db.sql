@@ -75,6 +75,34 @@ CREATE TABLE IF NOT EXISTS `password_reset_requests` (
   CONSTRAINT `fk_reset_resolved_by` FOREIGN KEY (`resolved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Password reset requests. Cron expires PENDING requests older than 7 days.';
 
+CREATE TABLE IF NOT EXISTS `password_reset_tokens` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned NOT NULL COMMENT 'User requesting reset.',
+  `token_hash` char(64) NOT NULL COMMENT 'SHA-256 hash of the reset token.',
+  `expires_at` datetime NOT NULL,
+  `used_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_password_reset_token_hash` (`token_hash`),
+  KEY `idx_password_reset_user` (`user_id`),
+  KEY `idx_password_reset_expires` (`expires_at`),
+  CONSTRAINT `fk_password_reset_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Password reset tokens.';
+
+CREATE TABLE IF NOT EXISTS `password_reset_verifications` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned NOT NULL COMMENT 'User requesting password reset (VP, Manager, Accountant).',
+  `token_hash` char(64) NOT NULL COMMENT 'SHA-256 hash of the email verification token.',
+  `expires_at` datetime NOT NULL,
+  `verified_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_email_verification_token_hash` (`token_hash`),
+  KEY `idx_email_verification_user` (`user_id`),
+  KEY `idx_email_verification_expires` (`expires_at`),
+  CONSTRAINT `fk_email_verification_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Email verification tokens for password reset requests (VP, Manager, Accountant).';
+
 CREATE TABLE IF NOT EXISTS `email_change_requests` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` bigint(20) unsigned NOT NULL COMMENT 'User requesting the email change.',
@@ -91,6 +119,20 @@ CREATE TABLE IF NOT EXISTS `email_change_requests` (
   CONSTRAINT `fk_email_change_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_email_change_resolved_by` FOREIGN KEY (`resolved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Email change requests awaiting principal approval.';
+
+CREATE TABLE IF NOT EXISTS `email_change_verifications` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned NOT NULL COMMENT 'User requesting the email change.',
+  `new_email` varchar(191) NOT NULL COMMENT 'Email being verified.',
+  `otp_hash` char(64) NOT NULL COMMENT 'SHA-256 hash of the OTP code.',
+  `expires_at` datetime NOT NULL,
+  `verified_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_email_verification_user` (`user_id`),
+  KEY `idx_email_verification_expires` (`expires_at`),
+  CONSTRAINT `fk_email_change_verification_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='OTP verification records for email change requests.';
 
 CREATE TABLE IF NOT EXISTS `jwt_blacklist` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -127,6 +169,10 @@ CREATE TABLE IF NOT EXISTS `semesters` (
   `program_id` bigint(20) unsigned NOT NULL,
   `semester_number` tinyint(3) unsigned NOT NULL COMMENT 'Position within program. PHP validates: >= 1 AND <= program.duration_semesters.',
   `academic_year` varchar(9) NOT NULL COMMENT 'Format: YYYY-YYYY. e.g., 2024-2025. PHP validates year2 == year1 + 1.',
+  `start_academic_year` int DEFAULT NULL COMMENT 'Program start year (e.g., 2025). VP specifies program duration.',
+  `end_academic_year` int DEFAULT NULL COMMENT 'Program end year (e.g., 2028). VP specifies program duration.',
+  `start_date` date DEFAULT NULL COMMENT 'Semester start date set by VP.',
+  `end_date` date DEFAULT NULL COMMENT 'Semester end date set by VP.',
   `is_current` tinyint(1) NOT NULL DEFAULT 0 COMMENT '1=currently running for this program. Enforced by trigger + PHP transaction.',
   `fee_amount` decimal(10,2) DEFAULT NULL COMMENT 'Set by Accountant. NULL = fee not yet configured.',
   PRIMARY KEY (`id`),
@@ -151,15 +197,19 @@ CREATE TABLE IF NOT EXISTS `subjects` (
 CREATE TABLE IF NOT EXISTS `student_profiles` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` bigint(20) unsigned NOT NULL,
+  `father_name` varchar(150) NOT NULL COMMENT 'Father name for student profile.',
   `registration_number` varchar(30) NOT NULL COMMENT 'Also stored in users.login_id. Must match.',
   `date_of_birth` date NOT NULL,
   `program_id` bigint(20) unsigned NOT NULL COMMENT 'Enrolled program. READ-ONLY after INSERT. No PHP endpoint may UPDATE this.',
+  `enrollment_semester_id` bigint(20) unsigned DEFAULT NULL COMMENT 'Entry semester for the student (usually semester 1).',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_user_id` (`user_id`),
   UNIQUE KEY `uq_registration_number` (`registration_number`),
   KEY `idx_program_id` (`program_id`),
+  KEY `idx_enrollment_semester_id` (`enrollment_semester_id`),
   CONSTRAINT `fk_student_profiles_program` FOREIGN KEY (`program_id`) REFERENCES `programs` (`id`) ON UPDATE CASCADE,
-  CONSTRAINT `fk_student_profiles_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `fk_student_profiles_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_student_profiles_enrollment_semester` FOREIGN KEY (`enrollment_semester_id`) REFERENCES `semesters` (`id`) ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Student-specific fields. One-to-one with users.';
 
 CREATE TABLE IF NOT EXISTS `student_fees` (
@@ -174,6 +224,19 @@ CREATE TABLE IF NOT EXISTS `student_fees` (
   CONSTRAINT `fk_student_fees_semester` FOREIGN KEY (`semester_id`) REFERENCES `semesters` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_student_fees_student` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Student fee payments. pending_amount and status computed in PHP, never stored.';
+
+CREATE TABLE IF NOT EXISTS `promotions_log` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `semester_id` bigint(20) unsigned NOT NULL,
+  `student_id` bigint(20) unsigned NOT NULL,
+  `status` enum('PROMOTED','PENDING','REMINDED','REJECTED') NOT NULL,
+  `performed_by` bigint(20) unsigned NOT NULL,
+  `performed_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `notes` text DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_semester_id` (`semester_id`),
+  KEY `idx_student_id` (`student_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Audit log for semester promotions and reminders.';
 
 -- 6. Teaching and scheduling tables
 CREATE TABLE IF NOT EXISTS `teacher_assignments` (
@@ -204,7 +267,7 @@ CREATE TABLE IF NOT EXISTS `attendance` (
   `student_id` bigint(20) unsigned NOT NULL COMMENT 'Must have role=STUDENT. PHP validates.',
   `timetable_slot_id` bigint(20) unsigned NOT NULL,
   `date` date NOT NULL COMMENT 'PHP validates: day-of-week of date must match timetable slot day.',
-  `status` enum('PRESENT','ABSENT') NOT NULL,
+  `status` enum('PRESENT','ABSENT','LATE') NOT NULL,
   `marked_by` bigint(20) unsigned DEFAULT NULL COMMENT 'Teacher who marked. SET NULL if teacher account deleted.',
   `marked_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
@@ -233,7 +296,7 @@ CREATE TABLE IF NOT EXISTS `system_config` (
 
 SET FOREIGN_KEY_CHECKS = 1;
 
--- Trigger: enforce single current semester per program
+-- Trigger: enforce single parity (odd/even) for current semesters per program
 DELIMITER //
 
 DROP TRIGGER IF EXISTS enforce_single_current_semester //
@@ -243,17 +306,28 @@ BEFORE UPDATE ON semesters
 FOR EACH ROW
 BEGIN
     DECLARE current_count INT;
+  DECLARE new_parity INT;
 
     IF NEW.is_current = 1 THEN
+    SET new_parity = MOD(NEW.semester_number, 2);
         SELECT COUNT(*) INTO current_count
         FROM semesters
         WHERE program_id = NEW.program_id 
         AND is_current = 1 
         AND id != NEW.id;
 
+    IF current_count > 0 THEN
+      SELECT COUNT(*) INTO current_count
+      FROM semesters
+      WHERE program_id = NEW.program_id
+      AND is_current = 1
+      AND id != NEW.id
+      AND MOD(semester_number, 2) <> new_parity;
+    END IF;
+
         IF current_count > 0 THEN
             SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Cannot set multiple semesters as current for same program';
+      SET MESSAGE_TEXT = 'Cannot mix odd and even active semesters for same program';
         END IF;
     END IF;
 END //

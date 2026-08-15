@@ -1,5 +1,7 @@
 <?php
 $title = $title ?? 'Forgot Password';
+$emailValue = $email ?? '';
+$fieldError = $field_error ?? '';
 ?>
 <?php ob_start(); ?>
 <form method="post" action="<?php echo e(url('forgot-password')); ?>">
@@ -32,6 +34,13 @@ $title = $title ?? 'Forgot Password';
             box-shadow: 0 0 0 4px rgba(47, 127, 135, 0.12);
         }
 
+        .field .inline-error {
+            margin-top: 8px;
+            color: var(--danger);
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
         .button {
             width: 100%;
             padding: 14px 18px;
@@ -54,12 +63,60 @@ $title = $title ?? 'Forgot Password';
 
     <div class="field">
         <label for="email">Email Address</label>
-        <input id="email" name="email" type="email" placeholder="you@example.com" required>
+        <input id="email" name="email" type="email" placeholder="Enter your Email Address" value="<?php echo e($emailValue); ?>" pattern="[A-Za-z0-9]+@gmail\.com" required>
+        <div class="inline-error" id="emailError" role="alert">
+            <?php echo e($fieldError); ?>
+        </div>
     </div>
 
     <button class="button" type="submit">Send Reset Link</button>
     <a class="back" href="<?php echo e(url('login')); ?>">Back to login</a>
 </form>
+<script>
+    (function () {
+        const form = document.querySelector('form');
+        const emailInput = document.getElementById('email');
+        const emailError = document.getElementById('emailError');
+
+        if (!form || !emailInput || !emailError) {
+            return;
+        }
+
+        const showError = (message) => {
+            emailError.textContent = message || '';
+        };
+
+        const validateEmail = () => {
+            if (!emailInput.value.trim()) {
+                showError('Email address is required.');
+                return false;
+            }
+
+            const gmailPattern = /^[A-Za-z0-9]+@gmail\.com$/;
+            if (!gmailPattern.test(emailInput.value.trim())) {
+                showError('Please enter a valid Gmail address (example: name@gmail.com).');
+                return false;
+            }
+
+            showError('');
+            return true;
+        };
+
+        emailInput.addEventListener('input', () => {
+            if (emailError.textContent) {
+                validateEmail();
+            }
+        });
+
+        emailInput.addEventListener('blur', validateEmail);
+
+        form.addEventListener('submit', (event) => {
+            if (!validateEmail()) {
+                event.preventDefault();
+            }
+        });
+    })();
+</script>
 <?php
 $content = ob_get_clean();
 require dirname(__DIR__) . DIRECTORY_SEPARATOR . 'layouts' . DIRECTORY_SEPARATOR . 'auth.php';

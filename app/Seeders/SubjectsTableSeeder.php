@@ -9,72 +9,23 @@ class SubjectsTableSeeder extends Seeder
         echo "Seeding subjects table...\n";
 
         $subjects = [
-            // Program 1, Semester 1 - CS101
-            [
-                'semester_id' => 1,
-                'subject_code' => 'CS101',
-                'subject_name' => 'Introduction to Programming',
-            ],
-            // Program 1, Semester 1 - CS102
-            [
-                'semester_id' => 1,
-                'subject_code' => 'CS102',
-                'subject_name' => 'Data Structures and Algorithms',
-            ],
-            // Program 1, Semester 2 - CS201
-            [
-                'semester_id' => 2,
-                'subject_code' => 'CS201',
-                'subject_name' => 'Web Development',
-            ],
-            // Program 1, Semester 2 - CS202
-            [
-                'semester_id' => 2,
-                'subject_code' => 'CS202',
-                'subject_name' => 'Database Systems',
-            ],
-            // Program 2, Semester 1 - EN101
-            [
-                'semester_id' => 5,
-                'subject_code' => 'EN101',
-                'subject_name' => 'English Composition',
-            ],
-            // Program 2, Semester 1 - EN102
-            [
-                'semester_id' => 5,
-                'subject_code' => 'EN102',
-                'subject_name' => 'British Literature',
-            ],
-            // Program 2, Semester 2 - EN201
-            [
-                'semester_id' => 6,
-                'subject_code' => 'EN201',
-                'subject_name' => 'American Literature',
-            ],
-            // Program 3, Semester 1 - BI101
-            [
-                'semester_id' => 7,
-                'subject_code' => 'BI101',
-                'subject_name' => 'Cell Biology',
-            ],
-            // Program 3, Semester 1 - BI102
-            [
-                'semester_id' => 7,
-                'subject_code' => 'BI102',
-                'subject_name' => 'Genetics',
-            ],
-            // Program 4, Semester 1 - MA101
-            [
-                'semester_id' => 9,
-                'subject_code' => 'MA101',
-                'subject_name' => 'Calculus I',
-            ],
-            // Program 4, Semester 1 - MA102
-            [
-                'semester_id' => 9,
-                'subject_code' => 'MA102',
-                'subject_name' => 'Linear Algebra',
-            ],
+            // BCA Semester 1 (semester_id: 1)
+            ['semester_id' => 1, 'subject_code' => 'CS101', 'subject_name' => 'Introduction to Programming'],
+            ['semester_id' => 1, 'subject_code' => 'CS102', 'subject_name' => 'Data Structures'],
+            ['semester_id' => 1, 'subject_code' => 'MATH101', 'subject_name' => 'Calculus I'],
+
+            // BCA Semester 2 (semester_id: 2)
+            ['semester_id' => 2, 'subject_code' => 'CS201', 'subject_name' => 'Object-Oriented Programming'],
+            ['semester_id' => 2, 'subject_code' => 'CS202', 'subject_name' => 'Web Development Basics'],
+            ['semester_id' => 2, 'subject_code' => 'MATH102', 'subject_name' => 'Calculus II'],
+
+            // MSC Semester 1 (semester_id: 3)
+            ['semester_id' => 3, 'subject_code' => 'MACS101', 'subject_name' => 'Advanced Algorithms'],
+            ['semester_id' => 3, 'subject_code' => 'MACS102', 'subject_name' => 'Distributed Systems'],
+
+            // MSC Semester 2 (semester_id: 4)
+            ['semester_id' => 4, 'subject_code' => 'MACS201', 'subject_name' => 'Machine Learning Advanced'],
+            ['semester_id' => 4, 'subject_code' => 'MACS202', 'subject_name' => 'Natural Language Processing'],
         ];
 
         $this->insertMany('subjects', $subjects);

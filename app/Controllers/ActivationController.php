@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Core\Database;
 use App\Models\ActivationTokenModel;
+use App\Models\SystemConfigModel;
 use App\Models\UserModel;
 
 final class ActivationController extends BaseController
@@ -69,12 +70,7 @@ final class ActivationController extends BaseController
                 ]);
             }
 
-            unset(
-                $_SESSION['user_id'],
-                $_SESSION['user_email'],
-                $_SESSION['user_role'],
-                $_SESSION['user_name']
-            );
+            $this->resetSession();
             $this->redirect('login');
             return;
 
@@ -101,7 +97,7 @@ final class ActivationController extends BaseController
             $this->view('auth.activate', [
                 'title' => 'Activate Account',
                 'token' => $token,
-                'error' => 'Passwords do not match.',
+                'error' => 'Passwords do not match. Please re-enter the same password.',
                 'requires_password' => $requiresPassword,
             ]);
             return;
@@ -129,7 +125,32 @@ final class ActivationController extends BaseController
             'used_at' => gmdate('Y-m-d H:i:s'),
         ]);
 
-        $this->redirect('login');
+        $user = $this->users->find($userId);
+        if (!$user) {
+            $this->resetSession();
+            $this->redirect('login');
+            return;
+        }
+
+        $this->resetSession();
+        $_SESSION['user_id'] = (int) $user['id'];
+        $_SESSION['user_email'] = (string) ($user['email'] ?? '');
+        $_SESSION['user_role'] = (string) ($user['role'] ?? '');
+        $_SESSION['user_name'] = (string) ($user['full_name'] ?? '');
+
+        $configModel = new SystemConfigModel();
+        $_SESSION['system_config'] = $configModel->getValues([
+            'WORKING_DAYS',
+            'DAY_START_TIME',
+            'DAY_END_TIME',
+        ]);
+
+        if ($this->needsProfileCompletion($user)) {
+            $this->redirect('/principal/profile');
+            return;
+        }
+
+        $this->redirect($this->dashboardPathForRole((string) ($user['role'] ?? '')));
     }
 
     /** @return array{record: array<string, mixed>|null, error: string|null, requires_password: bool} */
@@ -175,6 +196,42 @@ final class ActivationController extends BaseController
         }
 
         return true;
+    }
+
+    /** @param array<string, mixed> $user */
+    private function needsProfileCompletion(array $user): bool
+    {
+        $role = strtoupper((string) ($user['role'] ?? ''));
+        if ($role !== 'PRINCIPAL') {
+            return false;
+        }
+
+        $fullName = trim((string) ($user['full_name'] ?? ''));
+        return $fullName === '' || strcasecmp($fullName, 'Account Pending Activation') === 0;
+    }
+
+    private function resetSession(): void
+    {
+        unset(
+            $_SESSION['user_id'],
+            $_SESSION['user_email'],
+            $_SESSION['user_role'],
+            $_SESSION['user_name'],
+            $_SESSION['system_config']
+        );
+    }
+
+    private function dashboardPathForRole(string $role): string
+    {
+        return match (strtoupper($role)) {
+            'PRINCIPAL' => '/principal/dashboard',
+            'VP' => '/vp/dashboard',
+            'MANAGER' => '/manager/dashboard',
+            'ACCOUNTANT' => '/accountant/dashboard',
+            'TEACHER' => '/teacher/dashboard',
+            'STUDENT' => '/student/dashboard',
+            default => '/dashboard',
+        };
     }
 
 }

@@ -168,6 +168,79 @@ if ($selected_program_id === 0 && !empty($programs)) {
         color: #64748b;
     }
 
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 2000;
+    }
+
+    .modal-overlay.active {
+        display: flex;
+    }
+
+    .modal-card {
+        width: min(520px, 100%);
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+    }
+
+    .modal-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .modal-title {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .modal-subtitle {
+        margin: 6px 0 0;
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+
+    .modal-close {
+        border: 0;
+        background: #f1f5f9;
+        color: #0f172a;
+        border-radius: 999px;
+        width: 32px;
+        height: 32px;
+        cursor: pointer;
+        font-weight: 700;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+    }
+
+    .modal-actions .btn-primary,
+    .modal-actions .btn-secondary {
+        width: auto;
+        flex: 1;
+    }
+
+    .confirm-message {
+        margin: 0 0 12px;
+        color: #0f172a;
+        font-size: 0.95rem;
+    }
+
     @media (max-width: 960px) {
         .fees-grid {
             grid-template-columns: 1fr 1fr;
@@ -203,7 +276,7 @@ if ($selected_program_id === 0 && !empty($programs)) {
                 <div class="fees-field">
                     <label for="studentProgramSelect">Program</label>
                     <select id="studentProgramSelect">
-                        <option value="">All programs</option>
+                        <option value="">Select Program</option>
                         <?php foreach ($programs as $program): ?>
                             <option value="<?php echo (int) $program['id']; ?>" <?php echo (int) $program['id'] === $selected_program_id ? 'selected' : ''; ?>>
                                 <?php echo e($program['program_name'] ?? 'Program'); ?>
@@ -214,11 +287,11 @@ if ($selected_program_id === 0 && !empty($programs)) {
                 <div class="fees-field">
                     <label for="studentSemesterSelect">Semester</label>
                     <select id="studentSemesterSelect">
-                        <option value="">Select a program first</option>
+                        <option value="">Select Semester</option>
                     </select>
                 </div>
                 <div class="fees-field">
-                    <label for="registrationSearch">Registration #</label>
+                    <label for="registrationSearch">Registration</label>
                     <input type="text" id="registrationSearch" placeholder="Search registration number">
                 </div>
                 <div class="fees-field">
@@ -234,14 +307,12 @@ if ($selected_program_id === 0 && !empty($programs)) {
                 </div>
             </div>
 
-            <div class="fees-divider"></div>
-
             <div style="overflow-x: auto;">
                 <table class="fees-table">
                     <thead>
                         <tr>
                             <th>Student</th>
-                            <th>Registration #</th>
+                            <th>Registration</th>
                             <th>Semester</th>
                             <th>Fee</th>
                             <th>Paid</th>
@@ -258,19 +329,48 @@ if ($selected_program_id === 0 && !empty($programs)) {
                 </table>
             </div>
 
-            <div class="student-detail" id="studentDetailCard" style="display: none;">
-                <div class="detail-grid" id="studentDetailGrid"></div>
-                <div class="fees-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
-                    <div class="fees-field">
-                        <label for="paymentAmountInput">Payment Amount (₱)</label>
-                        <input type="number" id="paymentAmountInput" min="0" step="0.01" placeholder="Enter new payment">
-                    </div>
-                    <div class="fees-field" style="display: flex; align-items: flex-end;">
-                        <button class="btn-primary" id="updatePaymentButton">Update Payment</button>
-                    </div>
-                </div>
-                <div class="fees-status" id="paymentStatus"></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="studentFeeModal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="studentFeeModalTitle">
+        <div class="modal-header">
+            <div>
+                <h4 class="modal-title" id="studentFeeModalTitle">Update Student Fee</h4>
+                <p class="modal-subtitle" id="studentFeeModalSubtitle"></p>
             </div>
+            <button type="button" class="modal-close" id="studentFeeModalClose">✕</button>
+        </div>
+
+        <div class="fees-field">
+            <label for="paymentAmountInput">Payment Amount (₹)</label>
+            <input type="number" id="paymentAmountInput" min="0" step="0.01" placeholder="Enter new payment">
+        </div>
+        <div class="fees-status" id="paymentStatus"></div>
+
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" id="studentFeeModalCancel">Cancel</button>
+            <button type="button" class="btn-primary" id="updatePaymentButton">Update Payment</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="studentFeeConfirmModal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="studentFeeConfirmTitle">
+        <div class="modal-header">
+            <div>
+                <h4 class="modal-title" id="studentFeeConfirmTitle">Confirm Update</h4>
+                <p class="modal-subtitle">Review before saving changes.</p>
+            </div>
+            <button type="button" class="modal-close" id="studentFeeConfirmClose">✕</button>
+        </div>
+
+        <p class="confirm-message" id="studentFeeConfirmMessage"></p>
+
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" id="studentFeeConfirmCancel">Cancel</button>
+            <button type="button" class="btn-primary" id="studentFeeConfirmSave">Confirm</button>
         </div>
     </div>
 </div>
@@ -286,14 +386,22 @@ const registrationSearch = document.getElementById('registrationSearch');
 const statusSelect = document.getElementById('statusSelect');
 const applyStudentFilters = document.getElementById('applyStudentFilters');
 const studentTableBody = document.getElementById('studentTableBody');
-const studentDetailCard = document.getElementById('studentDetailCard');
-const studentDetailGrid = document.getElementById('studentDetailGrid');
 const paymentAmountInput = document.getElementById('paymentAmountInput');
 const updatePaymentButton = document.getElementById('updatePaymentButton');
 const paymentStatus = document.getElementById('paymentStatus');
+const studentFeeModal = document.getElementById('studentFeeModal');
+const studentFeeModalSubtitle = document.getElementById('studentFeeModalSubtitle');
+const studentFeeModalClose = document.getElementById('studentFeeModalClose');
+const studentFeeModalCancel = document.getElementById('studentFeeModalCancel');
+const studentFeeConfirmModal = document.getElementById('studentFeeConfirmModal');
+const studentFeeConfirmClose = document.getElementById('studentFeeConfirmClose');
+const studentFeeConfirmCancel = document.getElementById('studentFeeConfirmCancel');
+const studentFeeConfirmSave = document.getElementById('studentFeeConfirmSave');
+const studentFeeConfirmMessage = document.getElementById('studentFeeConfirmMessage');
 
 let studentFeeCache = [];
 let selectedFee = null;
+let pendingPaymentAmount = null;
 
 function fetchJson(url, options = {}) {
     return fetch(url, options).then(response => response.json());
@@ -309,16 +417,17 @@ function renderSemesterOptions(selectEl, semesters, selectedId) {
     if (!semesters.length) {
         const option = document.createElement('option');
         option.value = '';
-        option.textContent = 'No semesters available';
+        option.textContent = 'No semesters available for this program';
         selectEl.appendChild(option);
         return;
     }
 
     semesters.forEach(semester => {
+        const semesterId = semester.id ?? semester.semester_id ?? '';
         const option = document.createElement('option');
-        option.value = semester.id;
+        option.value = semesterId;
         option.textContent = `${semester.academic_year} - S${semester.semester_number}` + (semester.is_current == 1 ? ' (Active)' : '');
-        if (selectedId && Number(selectedId) === Number(semester.id)) {
+        if (selectedId && Number(selectedId) === Number(semesterId)) {
             option.selected = true;
         }
         selectEl.appendChild(option);
@@ -327,18 +436,36 @@ function renderSemesterOptions(selectEl, semesters, selectedId) {
 
 function loadSemesters(programId, selectEl, selectedId) {
     if (!programId) {
-        selectEl.innerHTML = '<option value="">Select a program first</option>';
+        selectEl.innerHTML = '<option value="">Select Semester</option>';
         return;
     }
 
     fetchJson(`<?php echo e(url('api/accountant/program')); ?>/${programId}/semesters`)
         .then(data => {
             if (!data.success) {
-                renderSemesterOptions(selectEl, [], null);
+                return [];
+            }
+            return data.data || [];
+        })
+        .then(semesters => {
+            if (semesters.length) {
+                renderSemesterOptions(selectEl, semesters, selectedId);
+                if (selectEl === studentSemesterSelect && selectEl.value) {
+                    refreshStudentFees();
+                }
                 return;
             }
 
-            renderSemesterOptions(selectEl, data.data || [], selectedId);
+            fetchJson('<?php echo e(url('api/accountant/semesters')); ?>')
+                .then(allData => {
+                    const allSemesters = allData.data || [];
+                    const filtered = allSemesters.filter(semester => String(semester.program_id) === String(programId));
+                    renderSemesterOptions(selectEl, filtered, selectedId);
+                    if (selectEl === studentSemesterSelect && selectEl.value) {
+                        refreshStudentFees();
+                    }
+                })
+                .catch(() => renderSemesterOptions(selectEl, [], null));
         })
         .catch(() => renderSemesterOptions(selectEl, [], null));
 }
@@ -356,9 +483,9 @@ function renderStudentTable(rows) {
             <td>${row.student_name}</td>
             <td>${row.registration_number}</td>
             <td>${row.semester_label}</td>
-            <td>₱${Number(row.fee_amount).toFixed(2)}</td>
-            <td>₱${Number(row.amount_paid).toFixed(2)}</td>
-            <td>₱${Number(row.pending).toFixed(2)}</td>
+            <td>₹${Number(row.fee_amount).toFixed(2)}</td>
+            <td>₹${Number(row.amount_paid).toFixed(2)}</td>
+            <td>₹${Number(row.pending).toFixed(2)}</td>
             <td><span class="badge ${row.status === 'PAID' ? 'badge-paid' : 'badge-pending'}">${row.status}</span></td>
             <td><button class="btn-primary" data-fee-id="${row.fee_id}">Select</button></td>
         `;
@@ -373,19 +500,29 @@ function selectStudentFee(feeId) {
         return;
     }
 
-    studentDetailCard.style.display = 'grid';
-    studentDetailGrid.innerHTML = `
-        <div class="detail-item"><span>Student</span><strong>${selectedFee.student_name}</strong></div>
-        <div class="detail-item"><span>Registration #</span><strong>${selectedFee.registration_number}</strong></div>
-        <div class="detail-item"><span>Semester</span><strong>${selectedFee.semester_label}</strong></div>
-        <div class="detail-item"><span>Status</span><strong>${selectedFee.status}</strong></div>
-        <div class="detail-item"><span>Semester Fee</span><strong>₱${Number(selectedFee.fee_amount).toFixed(2)}</strong></div>
-        <div class="detail-item"><span>Paid</span><strong>₱${Number(selectedFee.amount_paid).toFixed(2)}</strong></div>
-        <div class="detail-item"><span>Pending</span><strong>₱${Number(selectedFee.pending).toFixed(2)}</strong></div>
-    `;
-
+    const subtitle = `${selectedFee.student_name} • ${selectedFee.semester_label}`.trim();
+    studentFeeModalSubtitle.textContent = subtitle;
     paymentAmountInput.value = '';
     paymentStatus.textContent = '';
+    studentFeeModal.classList.add('active');
+    studentFeeModal.setAttribute('aria-hidden', 'false');
+    paymentAmountInput.focus();
+}
+
+function closeStudentFeeModal() {
+    studentFeeModal.classList.remove('active');
+    studentFeeModal.setAttribute('aria-hidden', 'true');
+}
+
+function openStudentFeeConfirm(message) {
+    studentFeeConfirmMessage.textContent = message;
+    studentFeeConfirmModal.classList.add('active');
+    studentFeeConfirmModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeStudentFeeConfirm() {
+    studentFeeConfirmModal.classList.remove('active');
+    studentFeeConfirmModal.setAttribute('aria-hidden', 'true');
 }
 
 function refreshStudentFees() {
@@ -393,6 +530,13 @@ function refreshStudentFees() {
     const semesterId = studentSemesterSelect.value;
     const registration = registrationSearch.value.trim();
     const status = statusSelect.value;
+
+    if (!programId && !registration) {
+        studentTableBody.innerHTML = '<tr><td colspan="8" class="empty-state">Select a program to view student fees.</td></tr>';
+        studentFeeCache = [];
+        selectedFee = null;
+        return;
+    }
 
     const params = new URLSearchParams();
     if (programId) params.append('program_id', programId);
@@ -412,6 +556,43 @@ function refreshStudentFees() {
 
 studentProgramSelect.addEventListener('change', () => {
     loadSemesters(studentProgramSelect.value, studentSemesterSelect, null);
+    studentFeeCache = [];
+    selectedFee = null;
+    refreshStudentFees();
+});
+
+studentFeeModalClose.addEventListener('click', closeStudentFeeModal);
+studentFeeModalCancel.addEventListener('click', closeStudentFeeModal);
+studentFeeModal.addEventListener('click', event => {
+    if (event.target === studentFeeModal) {
+        closeStudentFeeModal();
+    }
+});
+
+studentFeeConfirmClose.addEventListener('click', closeStudentFeeConfirm);
+studentFeeConfirmCancel.addEventListener('click', closeStudentFeeConfirm);
+studentFeeConfirmModal.addEventListener('click', event => {
+    if (event.target === studentFeeConfirmModal) {
+        closeStudentFeeConfirm();
+    }
+});
+
+studentSemesterSelect.addEventListener('change', () => {
+    refreshStudentFees();
+});
+
+let registrationTimer = null;
+registrationSearch.addEventListener('input', () => {
+    if (registrationTimer) {
+        clearTimeout(registrationTimer);
+    }
+    registrationTimer = setTimeout(() => {
+        refreshStudentFees();
+    }, 300);
+});
+
+statusSelect.addEventListener('change', () => {
+    refreshStudentFees();
 });
 
 applyStudentFilters.addEventListener('click', () => {
@@ -421,6 +602,11 @@ applyStudentFilters.addEventListener('click', () => {
 updatePaymentButton.addEventListener('click', () => {
     if (!selectedFee) {
         setStatus(paymentStatus, 'Select a student first.', true);
+        return;
+    }
+
+    if (!selectedFee.fee_id) {
+        setStatus(paymentStatus, 'Fee record is missing. Re-select the student.', true);
         return;
     }
 
@@ -436,10 +622,29 @@ updatePaymentButton.addEventListener('click', () => {
         return;
     }
 
+    pendingPaymentAmount = paymentAmount;
+    openStudentFeeConfirm(`Update payment by ₹${paymentAmount.toFixed(2)} for ${selectedFee.student_name}?`);
+});
+
+studentFeeConfirmSave.addEventListener('click', () => {
+    if (!selectedFee) {
+        closeStudentFeeConfirm();
+        return;
+    }
+
+    const paymentAmount = Number(pendingPaymentAmount || 0);
+    closeStudentFeeConfirm();
+
+    const newTotal = Number(selectedFee.amount_paid) + paymentAmount;
+
     fetchJson(`<?php echo e(url('api/accountant/fee')); ?>/${selectedFee.fee_id}/payment`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount_paid: newTotal })
+        body: JSON.stringify({
+            amount_paid: newTotal,
+            student_id: selectedFee.student_id,
+            semester_id: selectedFee.semester_id
+        })
     }).then(data => {
         if (data.success) {
             selectedFee.amount_paid = data.data.amount_paid;
@@ -456,6 +661,12 @@ updatePaymentButton.addEventListener('click', () => {
 
 if (initialProgramId) {
     loadSemesters(initialProgramId, studentSemesterSelect, initialSemesterId);
+} else if (studentProgramSelect.value) {
+    loadSemesters(studentProgramSelect.value, studentSemesterSelect, initialSemesterId);
+}
+
+if (initialProgramId) {
+    refreshStudentFees();
 }
 </script>
 

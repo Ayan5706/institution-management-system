@@ -4,6 +4,12 @@ $token = $token ?? '';
 $error = $error ?? null;
 $success = $success ?? null;
 $requiresPassword = $requires_password ?? true;
+$inlineError = null;
+
+if ($requiresPassword) {
+    $inlineError = $error;
+    $error = null;
+}
 ?>
 <?php ob_start(); ?>
 <form method="post" action="<?php echo e(url('activate/' . $token)); ?>">
@@ -29,6 +35,47 @@ $requiresPassword = $requires_password ?? true;
             background: var(--field);
             color: var(--text);
             outline: none;
+        }
+
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-wrapper input {
+            padding-right: 50px;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 16px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--muted);
+            transition: color 0.2s ease, transform 0.2s ease;
+            border-radius: 8px;
+        }
+
+        .password-toggle:hover {
+            color: var(--text);
+            transform: scale(1.1);
+        }
+
+        .password-toggle:active {
+            transform: scale(0.95);
+        }
+
+        .password-toggle:focus {
+            outline: 2px solid rgba(47, 127, 135, 0.35);
+            outline-offset: 2px;
         }
 
         .field input:focus {
@@ -57,6 +104,12 @@ $requiresPassword = $requires_password ?? true;
             margin-bottom: 16px;
         }
 
+        .field-error {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: #9c2b2b;
+        }
+
         .back {
             display: inline-block;
             margin-top: 18px;
@@ -65,7 +118,7 @@ $requiresPassword = $requires_password ?? true;
         }
     </style>
 
-    <?php if ($error): ?>
+    <?php if ($error && !$requiresPassword): ?>
         <div class="alert"><?php echo e($error); ?></div>
         <a class="back" href="<?php echo e(url('login')); ?>">Back to login</a>
     <?php elseif ($success): ?>
@@ -76,12 +129,20 @@ $requiresPassword = $requires_password ?? true;
     <?php elseif ($requiresPassword): ?>
         <div class="field">
             <label for="password">New Password</label>
-            <input id="password" name="password" type="password" placeholder="Enter new password" required>
+            <div class="password-wrapper">
+                <input id="password" name="password" type="password" placeholder="Enter new password" required>
+                <button type="button" id="toggleNewPassword" class="password-toggle" aria-label="Show password" title="Show/Hide password">
+                    <span class="toggle-icon">Show</span>
+                </button>
+            </div>
         </div>
 
         <div class="field">
             <label for="password_confirmation">Confirm Password</label>
             <input id="password_confirmation" name="password_confirmation" type="password" placeholder="Confirm new password" required>
+            <?php if ($inlineError): ?>
+                <div class="field-error"><?php echo e($inlineError); ?></div>
+            <?php endif; ?>
         </div>
 
         <button class="button" type="submit">Set Password</button>
@@ -91,6 +152,33 @@ $requiresPassword = $requires_password ?? true;
         <a class="back" href="<?php echo e(url('login')); ?>">Back to login</a>
     <?php endif; ?>
 </form>
+
+<script>
+(() => {
+    const passwordInput = document.getElementById('password');
+    const toggleButton = document.getElementById('toggleNewPassword');
+    const toggleIcon = toggleButton ? toggleButton.querySelector('.toggle-icon') : null;
+
+    if (toggleButton && passwordInput && toggleIcon) {
+        toggleButton.addEventListener('click', (event) => {
+            event.preventDefault();
+            const isPassword = passwordInput.type === 'password';
+            passwordInput.type = isPassword ? 'text' : 'password';
+            toggleIcon.textContent = isPassword ? 'Hide' : 'Show';
+            toggleButton.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+            toggleButton.setAttribute('title', isPassword ? 'Hide password' : 'Show password');
+            passwordInput.focus();
+        });
+
+        toggleButton.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                toggleButton.click();
+            }
+        });
+    }
+})();
+</script>
 <?php
 $content = ob_get_clean();
 require dirname(__DIR__) . DIRECTORY_SEPARATOR . 'layouts' . DIRECTORY_SEPARATOR . 'auth.php';

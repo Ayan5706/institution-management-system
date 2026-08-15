@@ -21,6 +21,25 @@ $assignmentPrograms = array_values(array_unique($assignmentPrograms));
 $assignmentSemesters = array_values(array_unique($assignmentSemesters));
 sort($assignmentPrograms);
 sort($assignmentSemesters);
+
+// Build unique programs and semesters from subjects
+$programsList = [];
+$semestersList = [];
+foreach ($subjects as $subject) {
+    if (!empty($subject['program_id']) && !empty($subject['program_name'])) {
+        if (!isset($programsList[$subject['program_id']])) {
+            $programsList[$subject['program_id']] = $subject['program_name'];
+        }
+    }
+    if (!empty($subject['semester_id']) && !empty($subject['semester_number'])) {
+        if (!isset($semestersList[$subject['semester_id']])) {
+            $semestersList[$subject['semester_id']] = [
+                'number' => $subject['semester_number'],
+                'year' => $subject['academic_year'] ?? ''
+            ];
+        }
+    }
+}
 ?>
 <?php ob_start(); ?>
 <div class="card content-card">
@@ -175,12 +194,6 @@ sort($assignmentSemesters);
             margin-top: 5px;
         }
 
-        .form-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-        }
-
         .notice-banner {
             padding: 12px 16px;
             border-radius: 8px;
@@ -247,7 +260,9 @@ sort($assignmentSemesters);
             display: flex;
             gap: 12px;
             margin: 10px 0 18px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            align-items: center;
+            overflow-x: auto;
         }
 
         .filter-input,
@@ -257,6 +272,16 @@ sort($assignmentSemesters);
             border-radius: 6px;
             font-size: 0.95rem;
             background: #fff;
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .filter-input {
+            cursor: text;
+        }
+
+        .filter-select {
+            cursor: pointer;
         }
     </style>
 
@@ -285,26 +310,50 @@ sort($assignmentSemesters);
     <div id="assignForm" class="form-container">
         <h3 style="margin-top: 0;">Assign Teacher to Subject</h3>
         <form onsubmit="handleAssign(event)">
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="assignTeacher">Teacher</label>
-                    <select id="assignTeacher" name="teacher_id" required>
-                        <option value="">Select a teacher</option>
-                        <?php foreach ($teachers as $teacher): ?>
-                            <option value="<?php echo e($teacher['id']); ?>"><?php echo e($teacher['full_name']); ?> (<?php echo e($teacher['login_id']); ?>)</option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="assignSubject">Subject</label>
-                    <select id="assignSubject" name="subject_id" required>
-                        <option value="">Select a subject</option>
-                        <?php foreach ($subjects as $subject): ?>
-                            <option value="<?php echo e($subject['id']); ?>"><?php echo e($subject['subject_name']); ?> (<?php echo e($subject['subject_code']); ?>)</option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
+            <div class="form-group">
+                <label for="assignProgram">Program *</label>
+                <select id="assignProgram" name="program_id" required>
+                    <option value="">Select a program</option>
+                    <?php foreach ($programsList as $progId => $progName): ?>
+                        <option value="<?php echo e($progId); ?>"><?php echo e($progName); ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
+
+            <div class="form-group">
+                <label for="assignSemester">Semester *</label>
+                <select id="assignSemester" name="semester_id" required>
+                    <option value="">Select a semester</option>
+                    <?php foreach ($semestersList as $semId => $semData): ?>
+                        <option value="<?php echo e($semId); ?>">Sem <?php echo e($semData['number']); ?> (<?php echo e($semData['year']); ?>)</option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="assignSubject">Subject *</label>
+                <select id="assignSubject" name="subject_id" required>
+                    <option value="">Select a subject</option>
+                    <?php foreach ($subjects as $subject): ?>
+                        <option value="<?php echo e($subject['id']); ?>" 
+                                data-program="<?php echo e($subject['program_id']); ?>"
+                                data-semester="<?php echo e($subject['semester_id']); ?>">
+                            <?php echo e($subject['subject_name']); ?> (<?php echo e($subject['subject_code']); ?>) - <?php echo e($subject['program_name']); ?> Sem <?php echo e($subject['semester_number']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="assignTeacher">Teacher *</label>
+                <select id="assignTeacher" name="teacher_id" required>
+                    <option value="">Select a teacher</option>
+                    <?php foreach ($teachers as $teacher): ?>
+                        <option value="<?php echo e($teacher['id']); ?>"><?php echo e($teacher['full_name']); ?> (<?php echo e($teacher['login_id']); ?>)</option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
             <div id="formMessage"></div>
             <div class="form-actions">
                 <button type="submit" class="btn-submit">Create Assignment</button>
@@ -377,7 +426,7 @@ sort($assignmentSemesters);
             const form = document.getElementById('assignForm');
             form.classList.toggle('active');
             if (form.classList.contains('active')) {
-                document.getElementById('assignTeacher').focus();
+                document.getElementById('assignProgram').focus();
             }
         }
 

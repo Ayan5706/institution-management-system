@@ -152,7 +152,9 @@ $adminAccounts = $admin_accounts ?? [];
             display: flex;
             gap: 12px;
             margin: 16px 0 20px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            align-items: center;
+            overflow-x: auto;
         }
 
         .filter-input,
@@ -162,6 +164,16 @@ $adminAccounts = $admin_accounts ?? [];
             border-radius: 8px;
             background: #fff;
             font-size: 0.9rem;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .filter-input {
+            cursor: text;
+        }
+
+        .filter-select {
+            cursor: pointer;
         }
 
         .modal-overlay {
@@ -519,7 +531,7 @@ $adminAccounts = $admin_accounts ?? [];
 
             <div class="form-group">
                 <label class="form-label" for="loginId">Login ID *</label>
-                <input type="text" id="loginId" name="login_id" class="form-input" placeholder="Enter login ID" required>
+                <input type="text" id="loginId" name="login_id" class="form-input" placeholder="Loading..." readonly required>
                 <div class="error-message" id="loginIdError"></div>
             </div>
 
@@ -535,11 +547,6 @@ $adminAccounts = $admin_accounts ?? [];
                 <div class="error-message" id="emailError"></div>
             </div>
 
-            <div class="form-group">
-                <label class="form-label" for="phone">Phone</label>
-                <input type="tel" id="phone" name="phone" class="form-input" placeholder="Enter phone number">
-                <div class="error-message" id="phoneError"></div>
-            </div>
         </form>
     </div>
     <div class="drawer-footer">
@@ -554,6 +561,7 @@ $adminAccounts = $admin_accounts ?? [];
         // Clear form first
         document.getElementById('addAccountForm').reset();
         clearFormErrors();
+        refreshLoginId();
     }
 
     function closeAddAccountDrawer() {
@@ -568,6 +576,39 @@ $adminAccounts = $admin_accounts ?? [];
             el.textContent = '';
         });
     }
+
+    function refreshLoginId() {
+        const role = document.getElementById('roleInput').value;
+        const loginIdInput = document.getElementById('loginId');
+        if (!role || !loginIdInput) {
+            return;
+        }
+
+        loginIdInput.value = 'Loading...';
+
+        fetch(`<?php echo e(url('principal/accounts/next-login-id')); ?>?role=${encodeURIComponent(role)}`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data && data.data.login_id) {
+                loginIdInput.value = data.data.login_id;
+            } else {
+                loginIdInput.value = '';
+                showAccountMessage(data.message || 'Unable to generate login ID.', true);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            loginIdInput.value = '';
+            showAccountMessage(`Error generating login ID: ${error.message}`, true);
+        });
+    }
+
+    document.getElementById('roleInput')?.addEventListener('change', refreshLoginId);
 
     window.IMS = window.IMS || {};
     window.IMS.initTableView({
@@ -605,10 +646,8 @@ $adminAccounts = $admin_accounts ?? [];
             },
             credentials: 'same-origin',
             body: JSON.stringify({
-                login_id: formData.get('login_id'),
                 full_name: formData.get('full_name'),
                 email: formData.get('email'),
-                phone: formData.get('phone'),
                 role: formData.get('role')
             })
         })

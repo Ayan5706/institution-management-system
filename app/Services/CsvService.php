@@ -118,9 +118,9 @@ class CsvService
                 continue;
             }
 
-            // Validate phone format (basic validation: 10-15 digits with optional formatting)
-            if (!empty($data['phone']) && !preg_match('/^[0-9\s\-\+\(\)]{10,15}$/', $data['phone'])) {
-                $errors[] = "Line $lineNumber: Invalid phone format: {$data['phone']}";
+            // Validate phone format (exactly 10 digits)
+            if (!empty($data['phone']) && !preg_match('/^\d{10}$/', $data['phone'])) {
+                $errors[] = "Line $lineNumber: Phone number must be exactly 10 digits";
                 continue;
             }
 

@@ -193,41 +193,22 @@ $activeNav = 'csv-upload';
             margin-top: 16px;
         }
 
-        table {
+        .error-table {
             width: 100%;
             border-collapse: collapse;
-            background: #fff;
-            font-size: 0.9rem;
+            background: transparent;
+            border: none;
         }
 
-        th {
-            background: #f8fafc;
-            padding: 12px;
-            text-align: left;
-            font-weight: 700;
-            border-bottom: 2px solid #e2e8f0;
-            color: #475569;
-        }
-
-        td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        tr:hover {
-            background: #f8fafc;
-        }
-
-        .error-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .error-list li {
-            padding: 6px 0;
+        .error-table td {
+            padding: 6px 8px;
+            border-bottom: 1px dashed #e2e8f0;
             color: #dc2626;
             font-size: 0.85rem;
+        }
+
+        .error-table tr:last-child td {
+            border-bottom: none;
         }
 
         .buttons {
@@ -543,7 +524,13 @@ $activeNav = 'csv-upload';
             invalidBody.innerHTML = data.invalid_rows.map(row => `
                 <tr data-search="${escapeHtml(`${row.row} ${(row.errors || []).join(' ')}`.trim())}">
                     <td>${row.row}</td>
-                    <td><ul class="error-list">${row.errors.map(err => '<li>• ' + escapeHtml(err) + '</li>').join('')}</ul></td>
+                    <td>
+                        <table class="error-table">
+                            <tbody>
+                                ${row.errors.map(err => '<tr><td>' + escapeHtml(err) + '</td></tr>').join('')}
+                            </tbody>
+                        </table>
+                    </td>
                 </tr>
             `).join('');
 

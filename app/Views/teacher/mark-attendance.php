@@ -2,6 +2,7 @@
 /** @var array $slot */
 /** @var array $students */
 /** @var bool $isWithinWindow */
+/** @var bool $attendanceCompleted */
 /** @var int $slot_id */
 ?>
 <?php ob_start(); ?>
@@ -61,81 +62,16 @@
         border: 1px solid #fcd34d;
     }
 
-    .controls-group {
-        display: flex;
-        gap: 12px;
-        margin-bottom: 20px;
-        flex-wrap: wrap;
-    }
-
     .filter-input {
         padding: 10px 12px;
         border-radius: 10px;
-        border: 1px solid #dbe4f0;
         font-size: 0.9rem;
         min-width: 220px;
-    }
-
-    .btn {
-        padding: 10px 14px;
-        border-radius: 10px;
-        border: 1px solid transparent;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 0.9rem;
-        transition: all 0.2s;
-    }
-
-    .btn-primary {
-        background: linear-gradient(135deg, #2563eb, #0d9488);
-        color: #fff;
-    }
-
-    .btn-primary:hover {
-        opacity: 0.9;
-    }
-
-    .btn-secondary {
-        background: #f1f5f9;
-        color: #0f172a;
-        border: 1px solid #dbe4f0;
-    }
-
-    .btn-secondary:hover {
-        background: #e0e7ff;
     }
 
     .btn:disabled {
         opacity: 0.5;
         cursor: not-allowed;
-    }
-
-    .attendance-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 20px;
-    }
-
-    .attendance-table thead {
-        background: #f1f5f9;
-        border-bottom: 2px solid #dbe4f0;
-    }
-
-    .attendance-table th {
-        padding: 12px;
-        text-align: left;
-        font-weight: 600;
-        color: #0f172a;
-        font-size: 0.9rem;
-    }
-
-    .attendance-table td {
-        padding: 12px;
-        border-bottom: 1px solid #e2e8f0;
-    }
-
-    .attendance-table tbody tr:hover {
-        background: #f8fbff;
     }
 
     .student-name {
@@ -152,6 +88,8 @@
         display: flex;
         gap: 16px;
         align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
     }
 
     .radio-label {
@@ -166,6 +104,18 @@
         cursor: pointer;
         width: 18px;
         height: 18px;
+    }
+
+    .attendance-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .attendance-table th,
+    .attendance-table td {
+        padding: 12px;
+        text-align: left;
+        font-size: 0.9rem;
     }
 
     .empty-state {
@@ -213,13 +163,6 @@
         .header-grid {
             grid-template-columns: repeat(2, 1fr);
         }
-        .attendance-table {
-            font-size: 0.85rem;
-        }
-        .attendance-table th,
-        .attendance-table td {
-            padding: 8px;
-        }
     }
 
     @media (max-width: 640px) {
@@ -244,12 +187,11 @@
             <h2 style="margin:0 0 6px;">Mark Attendance</h2>
             <div style="color:#64748b;">Record attendance for this session</div>
         </div>
-        <a href="<?php echo e(url('teacher/attendance/history')); ?>" class="btn btn-secondary">
+        <a href="<?php echo e(url('teacher/attendance/history')); ?>" class="btn btn-ghost">
             View History
         </a>
     </div>
 
-    <!-- Header Info -->
     <div class="attendance-header">
         <div class="header-grid">
             <div class="header-item">
@@ -261,99 +203,102 @@
             </div>
             <div class="header-item">
                 <div class="header-label">Class</div>
-                <div class="header-value"><?php echo e($slot['academic_year'] ?? 'N/A'); ?></div>
+                <div class="header-value"><?php echo e($slot['program_name'] ?? 'N/A'); ?></div>
                 <div style="font-size: 0.8rem; color: #6c7b86; margin-top: 4px;">
-                    Semester <?php echo e($slot['semester_number'] ?? '0'); ?>
+                    <?php echo e($slot['program_code'] ?? ''); ?> • Semester <?php echo e($slot['semester_number'] ?? '0'); ?>
                 </div>
             </div>
             <div class="header-item">
                 <div class="header-label">Date & Time</div>
                 <div class="header-value"><?php echo e(date('M d, Y')); ?></div>
                 <div style="font-size: 0.8rem; color: #6c7b86; margin-top: 4px;">
-                    <?php echo e(date('H:i A', strtotime($slot['start_time']))); ?> - 
+                    <?php echo e(date('H:i A', strtotime($slot['start_time']))); ?> -
                     <?php echo e(date('H:i A', strtotime($slot['end_time']))); ?>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Status Message -->
-    <?php if ($isWithinWindow): ?>
+    <?php if (!empty($attendanceCompleted)): ?>
+        <div class="status-banner status-success">
+            ✓ Attendance Completed. Editing is not available for this session.
+        </div>
+    <?php elseif ($isWithinWindow): ?>
         <div class="status-banner status-success">
             ✓ Attendance window is open. You can mark attendance now.
         </div>
     <?php else: ?>
         <div class="status-banner status-warning">
-            ⚠ Attendance window is closed. Marking is disabled.
+            ⚠ Attendance can only be marked during class hours.
         </div>
     <?php endif; ?>
 
-    <!-- Form Message -->
     <div id="formMessage" class="form-message"></div>
 
-    <!-- Student List -->
     <?php if (!empty($students)): ?>
         <form id="attendanceForm">
-            <!-- Control Buttons -->
-            <div class="controls-group">
-                <input type="text" id="studentSearch" class="filter-input" placeholder="Search students...">
-                <button type="button" class="btn btn-secondary" id="markAllPresent" 
-                    <?php echo !$isWithinWindow ? 'disabled' : ''; ?>>
-                    Mark All Present
-                </button>
-                <button type="button" class="btn btn-secondary" id="markAllAbsent"
-                    <?php echo !$isWithinWindow ? 'disabled' : ''; ?>>
-                    Mark All Absent
-                </button>
+            <div class="table-view-header">
+                <div class="table-view-controls">
+                    <input type="text" id="studentSearch" class="filter-input table-view-field" placeholder="Search students...">
+                    <button type="button" class="btn btn-ghost" id="markAllPresent"
+                        <?php echo (!$isWithinWindow || !empty($attendanceCompleted)) ? 'disabled' : ''; ?>>
+                        Mark All Present
+                    </button>
+                    <button type="button" class="btn btn-ghost" id="markAllAbsent"
+                        <?php echo (!$isWithinWindow || !empty($attendanceCompleted)) ? 'disabled' : ''; ?>>
+                        Mark All Absent
+                    </button>
+                </div>
+                <div class="table-view-meta"><?php echo e(count($students)); ?> total</div>
             </div>
 
-            <!-- Attendance Table -->
-            <table class="attendance-table">
-                <thead>
-                    <tr>
-                        <th>Student Name</th>
-                        <th>Registration Number</th>
-                        <th style="text-align: center;">Attendance Status</th>
-                    </tr>
-                </thead>
-                <tbody id="attendanceTableBody">
-                    <?php foreach ($students as $student): ?>
-                        <tr data-name="<?php echo e($student['full_name']); ?>" data-reg="<?php echo e($student['registration_number']); ?>">
-                            <td>
-                                <div class="student-name"><?php echo e($student['full_name']); ?></div>
-                            </td>
-                            <td>
-                                <div class="reg-number"><?php echo e($student['registration_number']); ?></div>
-                            </td>
-                            <td style="text-align: center;">
-                                <div class="radio-group">
-                                    <label class="radio-label">
-                                        <input type="radio" name="attendance[<?php echo e($student['id']); ?>]" 
-                                               value="PRESENT"
-                                               <?php echo !$isWithinWindow ? 'disabled' : ''; ?>>
-                                        <span>Present</span>
-                                    </label>
-                                    <label class="radio-label">
-                                        <input type="radio" name="attendance[<?php echo e($student['id']); ?>]" 
-                                               value="ABSENT"
-                                               <?php echo !$isWithinWindow ? 'disabled' : ''; ?>>
-                                        <span>Absent</span>
-                                    </label>
-                                </div>
-                            </td>
+            <div class="table-container">
+                <table class="attendance-table">
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Registration Number</th>
+                            <th style="text-align: center;">Attendance Status</th>
                         </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody id="attendanceTableBody">
+                        <?php foreach ($students as $student): ?>
+                            <tr data-name="<?php echo e($student['full_name']); ?>" data-reg="<?php echo e($student['registration_number']); ?>">
+                                <td>
+                                    <div class="student-name"><?php echo e($student['full_name']); ?></div>
+                                </td>
+                                <td>
+                                    <div class="reg-number"><?php echo e($student['registration_number']); ?></div>
+                                </td>
+                                <td style="text-align: center;">
+                                    <div class="radio-group">
+                                        <label class="radio-label">
+                                            <input type="radio" name="attendance[<?php echo e($student['id']); ?>]"
+                                                   value="PRESENT"
+                                                   <?php echo (!$isWithinWindow || !empty($attendanceCompleted)) ? 'disabled' : ''; ?>>
+                                            <span>Present</span>
+                                        </label>
+                                        <label class="radio-label">
+                                            <input type="radio" name="attendance[<?php echo e($student['id']); ?>]"
+                                                   value="ABSENT"
+                                                   <?php echo (!$isWithinWindow || !empty($attendanceCompleted)) ? 'disabled' : ''; ?>>
+                                            <span>Absent</span>
+                                        </label>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
 
-            <!-- Submit Group -->
             <div class="submit-group">
-                <a href="<?php echo e(url('teacher/attendance/history')); ?>" class="btn btn-secondary">
+                <a href="<?php echo e(url('teacher/attendance/history')); ?>" class="btn btn-ghost">
                     Cancel
                 </a>
                 <button type="submit" class="btn btn-primary" id="submitBtn"
-                    <?php echo !$isWithinWindow ? 'disabled' : ''; ?>>
-                    Submit Attendance
+                    <?php echo (!$isWithinWindow || !empty($attendanceCompleted)) ? 'disabled' : ''; ?>>
+                    Save Attendance
                 </button>
             </div>
         </form>
@@ -366,16 +311,15 @@
                 const formMessage = document.getElementById('formMessage');
                 const submitBtn = document.getElementById('submitBtn');
                 const isWithinWindow = <?php echo json_encode($isWithinWindow); ?>;
+                const attendanceCompleted = <?php echo json_encode(!empty($attendanceCompleted)); ?>;
                 const studentSearch = document.getElementById('studentSearch');
 
-                // Mark all present
                 markAllPresent.addEventListener('click', function() {
                     document.querySelectorAll('input[type="radio"][value="PRESENT"]').forEach(radio => {
                         radio.checked = true;
                     });
                 });
 
-                // Mark all absent
                 markAllAbsent.addEventListener('click', function() {
                     document.querySelectorAll('input[type="radio"][value="ABSENT"]').forEach(radio => {
                         radio.checked = true;
@@ -390,16 +334,19 @@
                     });
                 });
 
-                // Form submission
                 form.addEventListener('submit', async function(e) {
                     e.preventDefault();
 
                     if (!isWithinWindow) {
-                        showMessage('Attendance window is closed', 'error');
+                        showMessage('Attendance can only be marked during class hours', 'error');
                         return;
                     }
 
-                    // Collect attendance data
+                    if (attendanceCompleted) {
+                        showMessage('Attendance is already completed for this session', 'error');
+                        return;
+                    }
+
                     const attendance = {};
                     document.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
                         const name = radio.name;
@@ -413,7 +360,7 @@
                     }
 
                     submitBtn.disabled = true;
-                    submitBtn.textContent = 'Submitting...';
+                    submitBtn.textContent = 'Saving...';
 
                     try {
                         const response = await fetch('<?php echo e(url("api/teacher/attendance/{$slot_id}/submit")); ?>', {
@@ -435,12 +382,12 @@
                         } else {
                             showMessage(data.message || 'Failed to submit attendance', 'error');
                             submitBtn.disabled = false;
-                            submitBtn.textContent = 'Submit Attendance';
+                            submitBtn.textContent = 'Save Attendance';
                         }
                     } catch (error) {
                         showMessage('Error submitting attendance: ' + error.message, 'error');
                         submitBtn.disabled = false;
-                        submitBtn.textContent = 'Submit Attendance';
+                        submitBtn.textContent = 'Save Attendance';
                     }
                 });
 

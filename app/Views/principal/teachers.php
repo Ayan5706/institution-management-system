@@ -19,14 +19,28 @@ $programs = $programs ?? [];
             display: flex;
             gap: 12px;
             margin: 20px 0;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            align-items: center;
+            overflow-x: auto;
         }
 
+        .filter-bar input[type="text"],
         .filter-select {
             padding: 8px 12px;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
             background: #fff;
+            cursor: pointer;
+            flex: 1;
+            min-width: 150px;
+            font-size: 0.9rem;
+        }
+
+        .filter-bar input[type="text"] {
+            cursor: text;
+        }
+
+        .filter-select {
             cursor: pointer;
         }
 
@@ -145,7 +159,7 @@ $programs = $programs ?? [];
 
     <div class="table-view-header">
         <div class="filter-bar table-view-controls">
-        <input type="text" id="searchInput" class="table-view-field" placeholder="Search teachers..." style="padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0; width:240px;">
+        <input type="text" id="searchInput" class="table-view-field" placeholder="Search teachers...">
         <select class="filter-select table-view-field" id="statusFilter">
             <option value="">All Status</option>
             <option value="active">Active</option>

@@ -10,11 +10,13 @@
         <div class="form-group">
             <label class="form-label" for="full_name">Full Name</label>
             <input type="text" id="full_name" name="full_name" class="form-input" value="<?php echo e($user['full_name'] ?? ''); ?>" required>
+            <div id="full-name-error" class="error-message"></div>
         </div>
 
         <div class="form-group">
             <label class="form-label" for="phone">Phone Number</label>
             <input type="tel" id="phone" name="phone" class="form-input" value="<?php echo e($user['phone'] ?? ''); ?>">
+            <div id="phone-error" class="error-message"></div>
         </div>
 
         <div class="button-group">

@@ -101,10 +101,11 @@ $isActive = static function (string $path) use ($currentPath, $activeNav): strin
             overflow: hidden;
         }
 
-        .brand-mark img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        .brand-mark svg {
+            width: 70%;
+            height: 70%;
+            display: block;
+            fill: currentColor;
         }
 
         .brand-title {
@@ -140,19 +141,6 @@ $isActive = static function (string $path) use ($currentPath, $activeNav): strin
             display: flex;
             align-items: center;
             gap: 10px;
-        }
-
-        .nav-icon {
-            width: 18px;
-            height: 18px;
-            flex: 0 0 auto;
-            opacity: 0.75;
-        }
-
-        .nav a.active .nav-icon,
-        .nav a:hover .nav-icon,
-        .nav button:hover .nav-icon {
-            opacity: 1;
         }
 
         .nav a:hover,
@@ -412,6 +400,9 @@ $isActive = static function (string $path) use ($currentPath, $activeNav): strin
         .content-card .table-view-container {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: #ffffff;
         }
 
         .content-card .pagination,
@@ -485,7 +476,7 @@ $isActive = static function (string $path) use ($currentPath, $activeNav): strin
         }
 
         .stat-value {
-            font-size: 1.65rem;
+            font-size: 1.25rem;
             font-weight: 600;
             letter-spacing: -0.02em;
             margin-top: 2px;
@@ -499,6 +490,16 @@ $isActive = static function (string $path) use ($currentPath, $activeNav): strin
 
         .dashboard-layout.single-column {
             grid-template-columns: minmax(0, 1fr);
+        }
+
+        .dashboard-layout.two-column {
+            grid-template-columns: 1fr;
+        }
+
+        .dashboard-requests-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
         }
 
         .dashboard-column {
@@ -588,27 +589,73 @@ $isActive = static function (string $path) use ($currentPath, $activeNav): strin
             color: var(--text);
         }
 
-        .activity-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: grid;
-            gap: 12px;
-        }
-
-        .activity-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 10px 12px;
+        .content-card table {
+            width: 100%;
+            min-width: 720px;
+            border-collapse: collapse;
+            background: #ffffff;
+            border: 1px solid var(--border);
             border-radius: 12px;
-            background: #f5f8fa;
+            overflow: hidden;
         }
 
-        .activity-item strong {
+        .content-card .table-container table,
+        .content-card .table-view-container table {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+        }
+
+        .content-card table thead {
+            background: #f4f7f9;
+        }
+
+        .content-card table th,
+        .content-card table td {
+            padding: 12px 14px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+            vertical-align: middle;
+        }
+
+        .content-card table th {
+            white-space: nowrap;
+        }
+
+        .content-card table th {
             font-weight: 600;
-            display: block;
+            color: #0f172a;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-size: 0.78rem;
+        }
+
+        .content-card table tbody tr:hover {
+            background: rgba(47, 127, 135, 0.08);
+        }
+
+        .content-card table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .content-card .view-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            color: #0f172a;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .content-card .view-btn:hover {
+            background: #e2e8f0;
         }
 
         .activity-meta {
@@ -638,6 +685,21 @@ $isActive = static function (string $path) use ($currentPath, $activeNav): strin
             background: rgba(47, 127, 135, 0.12);
         }
 
+        @media (max-width: 1200px) {
+            .shell {
+                margin: 16px;
+                grid-template-columns: 220px 1fr;
+            }
+
+            .main {
+                padding: 22px 24px 28px;
+            }
+
+            .sidebar {
+                padding: 22px 16px;
+            }
+        }
+
         @media (max-width: 960px) {
             .shell {
                 grid-template-columns: 1fr;
@@ -649,8 +711,29 @@ $isActive = static function (string $path) use ($currentPath, $activeNav): strin
                 border-bottom: 1px solid var(--border);
             }
 
+            .nav {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .toolbar {
+                align-items: flex-start;
+            }
+
             .dashboard-layout {
                 grid-template-columns: 1fr;
+            }
+
+            .dashboard-requests-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .content-card table {
+                min-width: 640px;
             }
         }
 
@@ -661,6 +744,30 @@ $isActive = static function (string $path) use ($currentPath, $activeNav): strin
             .sidebar { padding: 18px 14px; }
             .topbar { padding: 16px; }
             .quick-actions { grid-template-columns: 1fr; }
+            .nav { grid-template-columns: 1fr; }
+            .page-title { font-size: clamp(1.2rem, 5vw, 1.6rem); }
+
+            .content-card .table-view-header {
+                align-items: flex-start;
+            }
+
+            .content-card .table-view-controls {
+                min-width: 100%;
+            }
+
+            .content-card .table-view-meta {
+                width: 100%;
+            }
+
+            .content-card table {
+                min-width: 520px;
+            }
+
+            .content-card table th,
+            .content-card table td {
+                padding: 10px 12px;
+                font-size: 0.85rem;
+            }
         }
     </style>
 </head>
@@ -669,17 +776,28 @@ $isActive = static function (string $path) use ($currentPath, $activeNav): strin
         <aside class="sidebar">
             <div class="brand">
                 <div class="brand-mark">
-                    <img src="/assets/images/logo-eduhub.svg" alt="EduHub logo">
+                    <svg viewBox="0 0 64 64" role="img" aria-label="Bank">
+                        <path d="M4 26l28-14 28 14v6H4v-6zm6 12h6v18h-6V38zm12 0h6v18h-6V38zm12 0h6v18h-6V38zm12 0h6v18h-6V38zM6 58h52v4H6v-4z"/>
+                    </svg>
                 </div>
                 <div>
-                    <p class="brand-title">EduHub</p>
-                    <p class="brand-subtitle">Management System</p>
+                    <p class="brand-title">IMS</p>
+                    <p class="brand-subtitle">Institution Management System</p>
                 </div>
             </div>
 
             <nav class="nav">
                 <?php
                 $userRole = strtoupper((string) ($_SESSION['user_role'] ?? 'STUDENT'));
+                $profileUrl = match ($userRole) {
+                    'PRINCIPAL' => url('principal/profile'),
+                    'VP'        => url('vp/profile'),
+                    'MANAGER'   => url('manager/profile'),
+                    'TEACHER'   => url('teacher/profile'),
+                    'ACCOUNTANT'=> url('accountant/profile'),
+                    'STUDENT'   => url('student/profile'),
+                    default     => url('profile')
+                };
                 ?>
 
                 <!-- Common Navigation -->
@@ -700,155 +818,135 @@ $isActive = static function (string $path) use ($currentPath, $activeNav): strin
                     'STUDENT'   => url('student/dashboard'),
                     default     => url('dashboard')
                 })); ?>">
-                    <img class="nav-icon" src="/assets/images/icons/dashboard.svg" alt="">
                     Dashboard
                 </a>
 
                 <!-- Principal Navigation -->
                 <?php if ($userRole === 'PRINCIPAL'): ?>
                     <a href="<?php echo e(url('principal/accounts')); ?>" class="<?php echo e($isActive(url('principal/accounts'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/users.svg" alt="">
                         Accounts
                     </a>
                     <a href="<?php echo e(url('principal/students')); ?>" class="<?php echo e($isActive(url('principal/students'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/students.svg" alt="">
                         Students
                     </a>
                     <a href="<?php echo e(url('principal/teachers')); ?>" class="<?php echo e($isActive(url('principal/teachers'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/teachers.svg" alt="">
                         Teachers
                     </a>
-                    <a href="<?php echo e(url('principal/profile')); ?>" class="<?php echo e($isActive(url('principal/profile'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/profile.svg" alt="">
-                        My Profile
-                    </a>
                     <a href="<?php echo e(url('principal/config')); ?>" class="<?php echo e($isActive(url('principal/config'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/settings.svg" alt="">
                         Config
                     </a>
                     <a href="<?php echo e(url('principal/password-resets')); ?>" class="<?php echo e($isActive(url('principal/password-resets'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/lock.svg" alt="">
                         Password Requests
+                    </a>
+                    <a href="<?php echo e(url('principal/email-requests')); ?>" class="<?php echo e($isActive(url('principal/email-requests'))); ?>">
+                        Email Requests
                     </a>
                 <?php endif; ?>
 
                 <!-- VP Navigation -->
                 <?php if ($userRole === 'VP'): ?>
                     <a href="<?php echo e(url('vp/programs')); ?>" class="<?php echo e($isActive(url('vp/programs'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/programs.svg" alt="">
                         Programs
                     </a>
                     <a href="<?php echo e(url('vp/semesters')); ?>" class="<?php echo e($isActive(url('vp/semesters'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/timetable.svg" alt="">
                         Semesters
                     </a>
                     <a href="<?php echo e(url('vp/subjects')); ?>" class="<?php echo e($isActive(url('vp/subjects'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/subjects.svg" alt="">
                         Subjects
                     </a>
                     <a href="<?php echo e(url('vp/teachers')); ?>" class="<?php echo e($isActive(url('vp/teachers'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/teachers.svg" alt="">
                         Teachers
                     </a>
                     <a href="<?php echo e(url('vp/assignments')); ?>" class="<?php echo e($isActive(url('vp/assignments'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/assignments.svg" alt="">
                         Assignments
                     </a>
                     <a href="<?php echo e(url('vp/timetable')); ?>" class="<?php echo e($isActive(url('vp/timetable'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/timetable.svg" alt="">
                         Timetable
                     </a>
                     <a href="<?php echo e(url('vp/password-requests')); ?>" class="<?php echo e($isActive(url('vp/password-requests'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/lock.svg" alt="">
                         Password Requests
                     </a>
-                    <a href="<?php echo e(url('vp/profile')); ?>" class="<?php echo e($isActive(url('vp/profile'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/profile.svg" alt="">
-                        My Profile
+                    <a href="<?php echo e(url('vp/email-requests')); ?>" class="<?php echo e($isActive(url('vp/email-requests'))); ?>">
+                        Email Requests
                     </a>
                 <?php endif; ?>
 
                 <!-- Manager Navigation -->
                 <?php if ($userRole === 'MANAGER'): ?>
                     <a href="<?php echo e(url('manager/students')); ?>" class="<?php echo e($isActive(url('manager/students'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/students.svg" alt="">
                         Students
                     </a>
+                    <a href="<?php echo e(url('manager/promotions')); ?>" class="<?php echo e($isActive(url('manager/promotions'))); ?>">
+                        Promotions
+                    </a>
                     <a href="<?php echo e(url('manager/students/csv-upload')); ?>" class="<?php echo e($isActive(url('manager/students/csv-upload'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/upload.svg" alt="">
                         CSV Upload
                     </a>
                     <a href="<?php echo e(url('manager/password-resets')); ?>" class="<?php echo e($isActive(url('manager/password-resets'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/lock.svg" alt="">
                         Password Requests
                     </a>
-                    <a href="<?php echo e(url('manager/profile')); ?>" class="<?php echo e($isActive(url('manager/profile'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/profile.svg" alt="">
-                        My Profile
+                    <a href="<?php echo e(url('manager/email-requests')); ?>" class="<?php echo e($isActive(url('manager/email-requests'))); ?>">
+                        Email Requests
                     </a>
                 <?php endif; ?>
 
                 <!-- Teacher Navigation -->
                 <?php if ($userRole === 'TEACHER'): ?>
-                    <a href="<?php echo e(url('teacher/attendance/history')); ?>" class="<?php echo e($isActive(url('teacher/attendance/history'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/attendance.svg" alt="">
-                        Attendance History
+                    <a href="<?php echo e(url('teacher/attendance')); ?>" class="<?php echo e($isActive(url('teacher/attendance'))); ?>">
+                        Mark Attendance
                     </a>
-                    <a href="<?php echo e(url('teacher/profile')); ?>" class="<?php echo e($isActive(url('teacher/profile'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/profile.svg" alt="">
-                        My Profile
+                    <a href="<?php echo e(url('teacher/timetable')); ?>" class="<?php echo e($isActive(url('teacher/timetable'))); ?>">
+                        View Timetable
+                    </a>
+                    <a href="<?php echo e(url('teacher/students')); ?>" class="<?php echo e($isActive(url('teacher/students'))); ?>">
+                        View Students
+                    </a>
+                    <a href="<?php echo e(url('teacher/attendance/history')); ?>" class="<?php echo e($isActive(url('teacher/attendance/history'))); ?>">
+                        Attendance History
                     </a>
                 <?php endif; ?>
 
                 <!-- Student Navigation -->
                 <?php if ($userRole === 'STUDENT'): ?>
                     <a href="<?php echo e(url('student/timetable')); ?>" class="<?php echo e($isActive(url('student/timetable'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/timetable.svg" alt="">
                         Timetable
                     </a>
+                    <a href="<?php echo e(url('student/subjects')); ?>" class="<?php echo e($isActive(url('student/subjects'))); ?>">
+                        Subjects
+                    </a>
                     <a href="<?php echo e(url('student/attendance')); ?>" class="<?php echo e($isActive(url('student/attendance'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/attendance.svg" alt="">
                         Attendance
                     </a>
                     <a href="<?php echo e(url('student/fees')); ?>" class="<?php echo e($isActive(url('student/fees'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/fees.svg" alt="">
                         Fees
-                    </a>
-                    <a href="<?php echo e(url('student/profile')); ?>" class="<?php echo e($isActive(url('student/profile'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/profile.svg" alt="">
-                        My Profile
                     </a>
                 <?php endif; ?>
 
                 <!-- Accountant Navigation -->
                 <?php if ($userRole === 'ACCOUNTANT'): ?>
                     <a href="<?php echo e(url('accountant/semester-fees')); ?>" class="<?php echo e($isActive(url('accountant/semester-fees'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/fees.svg" alt="">
                         Semester Fees
                     </a>
                     <a href="<?php echo e(url('accountant/student-fees')); ?>" class="<?php echo e($isActive(url('accountant/student-fees'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/fees.svg" alt="">
                         Student Fees
-                    </a>
-                    <a href="<?php echo e(url('accountant/profile')); ?>" class="<?php echo e($isActive(url('accountant/profile'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/profile.svg" alt="">
-                        My Profile
                     </a>
                 <?php endif; ?>
 
                 <!-- Admin Navigation (legacy - not used in spec) -->
                 <?php if ($userRole === 'ADMIN'): ?>
                     <a href="<?php echo e(url('users')); ?>" class="<?php echo e($isActive(url('users'))); ?>">
-                        <img class="nav-icon" src="/assets/images/icons/users.svg" alt="">
                         Users
                     </a>
                 <?php endif; ?>
+
+                <a href="<?php echo e($profileUrl); ?>" class="<?php echo e($isActive($profileUrl)); ?>">
+                    My Profile
+                </a>
 
                 <!-- Logout (Always shown) -->
                 <form action="<?php echo e(url('logout')); ?>" method="POST" style="margin: 0;">
                     <?php echo csrf_field(); ?>
                     <button type="submit" style="margin: 0;">
-                        <img class="nav-icon" src="/assets/images/icons/lock.svg" alt="">
                         Logout
                     </button>
                 </form>

@@ -132,21 +132,6 @@ $pending_resets = $pending_resets ?? [];
             background: #d1d5db;
         }
 
-        .filter-bar {
-            display: flex;
-            gap: 12px;
-            margin: 20px 0;
-            flex-wrap: wrap;
-        }
-
-        .filter-select {
-            padding: 8px 12px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            background: #fff;
-            cursor: pointer;
-        }
-
         .priority-badge {
             display: inline-block;
             padding: 4px 10px;
@@ -242,25 +227,6 @@ $pending_resets = $pending_resets ?? [];
 
     <div id="resetMessage" class="notice-banner"></div>
 
-    <div class="filter-bar">
-        <input type="text" class="filter-select" id="resetSearch" placeholder="Search name or email...">
-        <select class="filter-select" id="roleFilter">
-            <option value="">All Roles</option>
-            <option value="PRINCIPAL">Principal</option>
-            <option value="VP">VP</option>
-            <option value="MANAGER">Manager</option>
-            <option value="ACCOUNTANT">Accountant</option>
-            <option value="TEACHER">Teacher</option>
-            <option value="STUDENT">Student</option>
-        </select>
-        <select class="filter-select" id="priorityFilter">
-            <option value="">All Priorities</option>
-            <option value="High">High Priority</option>
-            <option value="Medium">Medium Priority</option>
-            <option value="Low">Low Priority</option>
-        </select>
-    </div>
-
     <div id="resetsContainer">
         <div class="empty-state">
             <div class="empty-state-icon">✓</div>
@@ -282,14 +248,17 @@ $pending_resets = $pending_resets ?? [];
 
 <script>
     let allResets = [];
+    const serverResets = <?php echo json_encode($pending_resets); ?>;
 
     // Load resets on page load
     document.addEventListener('DOMContentLoaded', function() {
+        if (Array.isArray(serverResets) && serverResets.length > 0) {
+            allResets = serverResets;
+            displayResets(allResets);
+            updateBadge(allResets.length);
+        }
+
         loadPasswordResets();
-        
-        document.getElementById('priorityFilter')?.addEventListener('change', filterResets);
-        document.getElementById('roleFilter')?.addEventListener('change', filterResets);
-        document.getElementById('resetSearch')?.addEventListener('input', filterResets);
     });
 
     function loadPasswordResets() {
@@ -300,14 +269,17 @@ $pending_resets = $pending_resets ?? [];
         .then(data => {
             if (data.success && data.data) {
                 allResets = data.data;
-                filterResets();
-            } else {
+                displayResets(allResets);
+                updateBadge(allResets.length);
+            } else if (!allResets.length) {
                 showEmptyState();
             }
         })
         .catch(error => {
             console.error('Error loading password resets:', error);
-            showEmptyState();
+            if (!allResets.length) {
+                showEmptyState();
+            }
         });
     }
 
@@ -353,37 +325,6 @@ $pending_resets = $pending_resets ?? [];
         `).join('')}</div>`;
     }
 
-    function filterResets() {
-        const priority = document.getElementById('priorityFilter')?.value || '';
-        const role = document.getElementById('roleFilter')?.value || '';
-        const search = (document.getElementById('resetSearch')?.value || '').toLowerCase();
-
-        const filtered = allResets.filter(reset => {
-            const roleValue = String(reset.user_role || '').toUpperCase();
-            const searchTarget = `${reset.user_name || ''} ${reset.user_email || ''}`.toLowerCase();
-            const matchesSearch = search === '' || searchTarget.includes(search);
-            const matchesRole = role === '' || roleValue === role;
-            const matchesPriority = priority === '' || getPriority(reset) === priority;
-
-            return matchesSearch && matchesRole && matchesPriority;
-        });
-
-        displayResets(filtered);
-        updateBadge(filtered.length);
-    }
-
-    function getPriority(reset) {
-        if (reset.is_admin_user) {
-            return 'High';
-        }
-
-        const role = String(reset.user_role || '').toUpperCase();
-        if (role === 'STUDENT') {
-            return 'Low';
-        }
-
-        return 'Medium';
-    }
 
     function approveReset(resetId) {
         fetch(`<?php echo e(url('principal/password-resets')); ?>/${resetId}/approve`, {

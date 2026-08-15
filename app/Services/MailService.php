@@ -20,12 +20,31 @@ final class MailService
         $password = (string) ($config['password'] ?? '');
         $port = (int) ($config['port'] ?? 587);
         $encryption = (string) ($config['encryption'] ?? 'tls');
-        $fromAddress = (string) ($config['from_address'] ?? '');
-        $fromName = (string) ($config['from_name'] ?? '');
+        $fromAddress = trim((string) ($config['from_address'] ?? ''));
+        $fromName = trim((string) ($config['from_name'] ?? ''));
 
-        if ($host === '' || $username === '' || $password === '' || $fromAddress === '') {
-            \App\Helpers\logger_helper('mail_error', 'Mail configuration is incomplete.');
-            throw new RuntimeException('Mail configuration is incomplete.');
+        if ($fromAddress === '' && filter_var($username, FILTER_VALIDATE_EMAIL)) {
+            $fromAddress = $username;
+        }
+
+        $missingKeys = [];
+        if ($host === '') {
+            $missingKeys[] = 'MAIL_HOST';
+        }
+        if ($username === '') {
+            $missingKeys[] = 'MAIL_USERNAME';
+        }
+        if ($password === '') {
+            $missingKeys[] = 'MAIL_PASSWORD';
+        }
+        if ($fromAddress === '') {
+            $missingKeys[] = 'MAIL_FROM_ADDRESS';
+        }
+
+        if ($missingKeys !== []) {
+            $message = 'Mail configuration is incomplete. Missing: ' . implode(', ', $missingKeys) . '.';
+            \App\Helpers\logger_helper('mail_error', $message);
+            throw new RuntimeException($message);
         }
 
         $mailer = new PHPMailer(true);

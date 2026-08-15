@@ -32,13 +32,13 @@ $verifyDisabled = !empty($email_request_pending) || !$otp_pending;
 
         <div class="form-group">
             <label class="form-label" for="new_email">New Email</label>
-            <input type="email" id="new_email" name="new_email" class="form-input" placeholder="Enter new email" pattern="[A-Za-z0-9]+@gmail\.com" required value="<?php echo e($otp_email); ?>" <?php echo !empty($email_request_pending) ? 'disabled' : ''; ?> <?php echo $otp_pending ? 'readonly' : ''; ?>>
+            <input type="email" id="new_email" name="new_email" class="form-input" placeholder="Enter new email" pattern="[^@\s]+@[^@\s]+\.[^@\s]+" required value="<?php echo e($otp_email); ?>" <?php echo !empty($email_request_pending) ? 'disabled' : ''; ?> <?php echo $otp_pending ? 'readonly' : ''; ?>>
             <div class="inline-error" id="new-email-error" style="display: none;"></div>
         </div>
 
         <div class="form-group">
             <label class="form-label" for="confirm_email">Confirm New Email</label>
-            <input type="email" id="confirm_email" name="confirm_email" class="form-input" placeholder="Confirm new email" pattern="[A-Za-z0-9]+@gmail\.com" required value="<?php echo e($otp_email); ?>" <?php echo !empty($email_request_pending) ? 'disabled' : ''; ?> <?php echo $otp_pending ? 'readonly' : ''; ?>>
+            <input type="email" id="confirm_email" name="confirm_email" class="form-input" placeholder="Confirm new email" pattern="[^@\s]+@[^@\s]+\.[^@\s]+" required value="<?php echo e($otp_email); ?>" <?php echo !empty($email_request_pending) ? 'disabled' : ''; ?> <?php echo $otp_pending ? 'readonly' : ''; ?>>
             <div class="inline-error" id="confirm-email-error" style="display: none;"></div>
         </div>
 

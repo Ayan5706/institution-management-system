@@ -18,100 +18,123 @@ $pending_resets = $pending_resets ?? [];
     </div>
 
     <style>
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-        }
-
-        .empty-state-icon {
-            font-size: 4rem;
-            margin-bottom: 16px;
-        }
-
-        .empty-state-title {
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-            color: #0f172a;
-        }
-
-        .empty-state-text {
-            color: #64748b;
-            margin-bottom: 20px;
-        }
-
-        .reset-card {
+        .table-panel {
+            width: 100%;
+            margin-top: 18px;
             background: #fff;
             border: 1px solid #e2e8f0;
-            border-radius: 12px;
+            border-radius: 20px;
             padding: 20px;
-            margin-bottom: 16px;
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
         }
 
-        .reset-card.urgent {
-            border-left: 4px solid #dc2626;
-        }
-
-        .reset-header {
+        .table-view-header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 18px;
         }
 
-        .reset-user-info {
-            flex: 1;
-        }
-
-        .reset-user-name {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 4px;
-        }
-
-        .reset-user-details {
-            color: #64748b;
-            font-size: 0.9rem;
-            margin-bottom: 2px;
-        }
-
-        .reset-timestamp {
-            color: #94a3b8;
-            font-size: 0.85rem;
-        }
-
-        .reset-reason {
-            background: #f8fafc;
-            border-left: 3px solid #64748b;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 16px;
+        .table-summary {
             color: #475569;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .filter-input {
+            width: 100%;
+            max-width: 420px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            color: #0f172a;
             font-size: 0.95rem;
         }
 
-        .reason-label {
-            font-weight: 600;
-            display: block;
-            margin-bottom: 4px;
+        .table-container {
+            overflow-x: auto;
+            margin-top: 10px;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 760px;
+        }
+
+        th,
+        td {
+            padding: 16px 18px;
+            border-bottom: 1px solid #edf2f7;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #475569;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        td {
+            color: #334155;
+            font-size: 0.93rem;
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+
+        .login-email {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .login-email strong {
             color: #0f172a;
         }
 
-        .reset-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
+        .date-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: #4338ca;
+            font-size: 0.85rem;
+            font-weight: 700;
         }
 
-        .btn-action {
-            padding: 10px 18px;
-            border-radius: 8px;
-            border: 0;
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-approve,
+        .btn-reject {
+            border: none;
+            border-radius: 12px;
+            padding: 10px 16px;
             cursor: pointer;
-            font-weight: 600;
-            font-size: 0.9rem;
-            transition: all 0.2s;
+            font-weight: 700;
+            font-size: 0.88rem;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
 
         .btn-approve {
@@ -120,53 +143,25 @@ $pending_resets = $pending_resets ?? [];
         }
 
         .btn-approve:hover {
-            background: #059669;
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.18);
         }
 
         .btn-reject {
-            background: #e5e7eb;
-            color: #374151;
+            background: #ef4444;
+            color: #fff;
         }
 
         .btn-reject:hover {
-            background: #d1d5db;
-        }
-
-        .priority-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .priority-high {
-            background: #fecaca;
-            color: #7f1d1d;
-        }
-
-        .priority-medium {
-            background: #fed7aa;
-            color: #7c2d12;
-        }
-
-        .priority-low {
-            background: #d1fae5;
-            color: #064e3b;
-        }
-
-        .reset-status {
-            font-size: 0.85rem;
-            color: #64748b;
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(239, 68, 68, 0.18);
         }
 
         .notice-banner {
-            padding: 12px 16px;
-            border-radius: 8px;
+            padding: 14px 16px;
+            border-radius: 12px;
             margin: 16px 0;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             display: none;
         }
 
@@ -180,6 +175,16 @@ $pending_resets = $pending_resets ?? [];
             background: #fee2e2;
             border-left: 4px solid #ef4444;
             color: #991b1b;
+        }
+
+        .empty-message {
+            padding: 56px 24px;
+            text-align: center;
+        }
+
+        .empty-message p {
+            margin: 8px 0;
+            color: #64748b;
         }
 
         .modal-backdrop {
@@ -197,25 +202,25 @@ $pending_resets = $pending_resets ?? [];
         }
 
         .modal-card {
-            width: min(420px, 92vw);
+            width: min(520px, 92vw);
             background: #fff;
-            border-radius: 12px;
-            padding: 20px;
+            border-radius: 16px;
+            padding: 24px;
             border: 1px solid #e2e8f0;
-            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+            box-shadow: 0 24px 40px rgba(15, 23, 42, 0.14);
         }
 
         .modal-title {
-            margin: 0 0 8px;
+            margin: 0 0 12px;
             font-size: 1.1rem;
             color: #0f172a;
         }
 
         .modal-text {
-            margin: 0 0 16px;
+            margin: 0 0 18px;
             color: #475569;
             font-size: 0.95rem;
-            line-height: 1.5;
+            line-height: 1.6;
         }
 
         .modal-actions {
@@ -225,12 +230,21 @@ $pending_resets = $pending_resets ?? [];
         }
     </style>
 
-    <div id="resetMessage" class="notice-banner"></div>
+    <div class="table-panel">
+        <div class="table-view-header">
+            <div class="filter-bar">
+                <input id="resetSearch" class="filter-input" type="text" placeholder="Search user, email, or role...">
+            </div>
+            <div class="table-summary" id="requestTotalCount"><?php echo e(count($pending_resets)); ?> total</div>
+        </div>
 
-    <div id="resetsContainer">
-        <div class="empty-state">
-            <div class="empty-state-icon">✓</div>
-            <div class="empty-state-title">Loading requests...</div>
+        <div id="resetMessage" class="notice-banner"></div>
+
+        <div class="table-container" id="resetsContainer">
+        <div class="empty-message">
+            <div style="font-size: 1.9rem; margin-bottom: 12px;">📋</div>
+            <p style="font-weight: 700; color: #0f172a;">Loading requests...</p>
+            <p>No pending password reset requests found.</p>
         </div>
     </div>
 </div>
@@ -246,6 +260,20 @@ $pending_resets = $pending_resets ?? [];
     </div>
 </div>
 
+<div id="tempPasswordModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tempTitle">
+        <h3 class="modal-title" id="tempTitle">Temporary Password</h3>
+        <p class="modal-text" id="tempText">Use this temporary password to notify the user.</p>
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:12px;">
+            <input id="tempPasswordField" type="text" readonly style="flex:1; padding:8px; border:1px solid #e2e8f0; border-radius:6px; font-weight:700;" />
+            <button type="button" class="btn-action btn-approve" id="copyTempBtn">Copy</button>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn-action btn-reject" onclick="closeTempModal()">Close</button>
+        </div>
+    </div>
+</div>
+
 <script>
     let allResets = [];
     const serverResets = <?php echo json_encode($pending_resets); ?>;
@@ -254,11 +282,11 @@ $pending_resets = $pending_resets ?? [];
     document.addEventListener('DOMContentLoaded', function() {
         if (Array.isArray(serverResets) && serverResets.length > 0) {
             allResets = serverResets;
-            displayResets(allResets);
-            updateBadge(allResets.length);
+            renderTable(allResets);
         }
 
         loadPasswordResets();
+        document.getElementById('resetSearch')?.addEventListener('input', filterResets);
     });
 
     function loadPasswordResets() {
@@ -269,60 +297,102 @@ $pending_resets = $pending_resets ?? [];
         .then(data => {
             if (data.success && data.data) {
                 allResets = data.data;
-                displayResets(allResets);
-                updateBadge(allResets.length);
-            } else if (!allResets.length) {
-                showEmptyState();
+                renderTable(allResets);
+            } else {
+                renderEmpty();
             }
         })
-        .catch(error => {
-            console.error('Error loading password resets:', error);
-            if (!allResets.length) {
-                showEmptyState();
-            }
-        });
+        .catch(() => renderEmpty());
     }
 
-    function displayResets(resets) {
+    function renderTable(resets) {
         const container = document.getElementById('resetsContainer');
-        
+        const totalCount = document.getElementById('requestTotalCount');
         if (!resets || resets.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon">✓</div>
-                    <div class="empty-state-title">No Pending Requests</div>
-                    <div class="empty-state-text">All password reset requests have been processed.</div>
-                </div>
-            `;
+            renderEmpty();
             return;
         }
 
-        container.innerHTML = `<div>${resets.map(reset => `
-            <div class="reset-card ${reset.is_admin_user ? 'urgent' : ''}">
-                <div class="reset-header">
-                    <div class="reset-user-info">
-                        <div class="reset-user-name">${escapeHtml(reset.user_name || 'N/A')}</div>
-                        <div class="reset-user-details">
-                            <strong>Email:</strong> ${escapeHtml(reset.user_email || 'N/A')}
-                        </div>
-                        <div class="reset-user-details">
-                            <strong>Role:</strong> ${escapeHtml((reset.user_role || 'Unknown').toUpperCase())}
-                        </div>
-                        <div class="reset-timestamp">
-                            Requested: ${escapeHtml(reset.created_at || 'N/A')}
-                        </div>
-                    </div>
-                </div>
-                <div class="reset-actions">
-                    <button class="btn-action btn-reject" onclick="confirmReject(${reset.id})">
-                        Reject
-                    </button>
-                    <button class="btn-action btn-approve" onclick="confirmApprove(${reset.id})">
-                        Approve & Send Reset
-                    </button>
-                </div>
+        updateBadge(resets.length);
+        if (totalCount) {
+            totalCount.textContent = `${resets.length} total`;
+        }
+        container.innerHTML = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>User Name</th>
+                        <th>Login / Email</th>
+                        <th>Role</th>
+                        <th>Requested Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="resetTableBody">
+                    ${resets.map(reset => `
+                        <tr id="row-${reset.id}" data-search="${escapeHtml((reset.user_name || '') + ' ' + (reset.user_email || '') + ' ' + (reset.user_role || ''))}">
+                            <td>${escapeHtml(reset.user_name || 'N/A')}</td>
+                            <td class="login-email">
+                                <strong>${escapeHtml(reset.login_id || reset.user_email || 'N/A')}</strong>
+                                <span>${escapeHtml(reset.user_email || 'N/A')}</span>
+                            </td>
+                            <td>${escapeHtml((reset.user_role || 'Unknown').toUpperCase())}</td>
+                            <td><span class="date-badge">${formatDate(reset.created_at)}</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button type="button" class="btn-approve" onclick="confirmApprove(${reset.id})">Approve</button>
+                                    <button type="button" class="btn-reject" onclick="confirmReject(${reset.id})">Reject</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    }
+
+    function renderEmpty() {
+        updateBadge(0);
+        const container = document.getElementById('resetsContainer');
+        container.innerHTML = `
+            <div class="empty-message">
+                <div style="font-size: 1.9rem; margin-bottom: 12px;">✓</div>
+                <p style="font-weight: 700; color: #0f172a;">No Pending Requests</p>
+                <p>All password reset requests have been processed.</p>
             </div>
-        `).join('')}</div>`;
+        `;
+    }
+
+    function filterResets() {
+        const query = (document.getElementById('resetSearch')?.value || '').toLowerCase().trim();
+        const filtered = allResets.filter(reset => {
+            const text = `${reset.user_name || ''} ${reset.login_id || reset.user_email || ''} ${reset.user_email || ''} ${reset.user_role || ''}`.toLowerCase();
+            return query === '' || text.includes(query);
+        });
+
+        renderTable(filtered);
+    }
+
+    function showNoResultsRow() {
+        const tbody = document.getElementById('resetTableBody');
+        if (!tbody || tbody.querySelector('.no-results-row')) {
+            return;
+        }
+        const row = document.createElement('tr');
+        row.className = 'no-results-row';
+        row.innerHTML = `
+            <td colspan="5" style="padding: 24px 18px; text-align: center; color: #64748b;">
+                No matching requests found.
+            </td>
+        `;
+        tbody.appendChild(row);
+    }
+
+    function clearNoResultsRow() {
+        const row = document.querySelector('#resetTableBody .no-results-row');
+        if (row) {
+            row.remove();
+        }
     }
 
 
@@ -342,7 +412,14 @@ $pending_resets = $pending_resets ?? [];
         })
         .then(data => {
             if (data.success) {
-                showMessage(`Reset approved. Temporary password: ${data.data.temp_password} (User: ${data.data.user_email})`, 'success');
+                // Show persistent modal with temporary password so principal can copy it
+                const temp = (data.data && data.data.temp_password) ? data.data.temp_password : (data.temporary_password || '');
+                const email = (data.data && data.data.user_email) ? data.data.user_email : (data.user_email || '');
+                if (temp !== '') {
+                    showTempPasswordModal(temp, email);
+                } else {
+                    showMessage('Reset approved.', 'success');
+                }
                 loadPasswordResets();
             } else {
                 showMessage(data.message || 'Failed to approve reset', 'error');
@@ -381,19 +458,33 @@ $pending_resets = $pending_resets ?? [];
     }
 
     function updateBadge(count) {
-        const badge = document.querySelector('.toolbar span[style*="background"]');
+        const badge = document.querySelector('.toolbar .widget-pill');
         if (badge) {
             badge.textContent = `${count} Pending`;
         }
     }
 
+    function formatDate(dateStr) {
+        const date = new Date(dateStr);
+        if (Number.isNaN(date.getTime())) {
+            return 'Unknown';
+        }
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
     function showEmptyState() {
         const container = document.getElementById('resetsContainer');
         container.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">✓</div>
-                <div class="empty-state-title">No Pending Requests</div>
-                <div class="empty-state-text">All password reset requests have been processed.</div>
+            <div class="empty-message">
+                <div style="font-size: 1.9rem; margin-bottom: 12px;">✓</div>
+                <p style="font-weight: 700; color: #0f172a;">No Pending Requests</p>
+                <p>All password reset requests have been processed.</p>
             </div>
         `;
     }
@@ -462,6 +553,40 @@ $pending_resets = $pending_resets ?? [];
         modal.classList.remove('show');
         modal.setAttribute('aria-hidden', 'true');
         confirmAction = null;
+    }
+
+    // Temporary password modal helpers
+    function showTempPasswordModal(password, email) {
+        const modal = document.getElementById('tempPasswordModal');
+        const field = document.getElementById('tempPasswordField');
+        const text = document.getElementById('tempText');
+        const copyBtn = document.getElementById('copyTempBtn');
+
+        field.value = password;
+        text.textContent = email ? `Temporary password for ${email}:` : 'Use this temporary password to notify the user.';
+        copyBtn.onclick = () => {
+            try {
+                field.select();
+                document.execCommand('copy');
+                copyBtn.textContent = 'Copied';
+                setTimeout(() => { copyBtn.textContent = 'Copy'; }, 2000);
+            } catch (e) {
+                // fallback
+                navigator.clipboard?.writeText(password).then(() => {
+                    copyBtn.textContent = 'Copied';
+                    setTimeout(() => { copyBtn.textContent = 'Copy'; }, 2000);
+                }).catch(() => {});
+            }
+        };
+
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeTempModal() {
+        const modal = document.getElementById('tempPasswordModal');
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
     }
 </script>
 

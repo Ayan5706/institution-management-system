@@ -39,15 +39,15 @@ final class Env
 
             $value = self::sanitizeValue($value);
 
-            if (getenv($name) === false) {
+            if (getenv($name) === false || getenv($name) === '') {
                 putenv("{$name}={$value}");
             }
 
-            if (!array_key_exists($name, $_ENV)) {
+            if (!array_key_exists($name, $_ENV) || $_ENV[$name] === '') {
                 $_ENV[$name] = $value;
             }
 
-            if (!array_key_exists($name, $_SERVER)) {
+            if (!array_key_exists($name, $_SERVER) || $_SERVER[$name] === '') {
                 $_SERVER[$name] = $value;
             }
         }

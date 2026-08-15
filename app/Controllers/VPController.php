@@ -905,7 +905,45 @@ class VPController extends BaseController
             'resolved_at' => date('Y-m-d H:i:s'),
         ]);
 
-        $this->json(['success' => true, 'message' => 'Password reset approved. Temporary password: ' . $tempPassword, 'data' => ['temp_password' => $tempPassword]]);
+        $recipientEmail = trim((string) ($user['email'] ?? ''));
+        if ($recipientEmail === '') {
+            $this->json([
+                'success' => false,
+                'message' => 'Password reset approved, but the teacher does not have an email address on file.',
+                'data' => ['temp_password' => $tempPassword],
+            ], 422);
+            return;
+        }
+
+        $subject = 'Your IMS password reset has been approved';
+        $htmlBody = sprintf(
+            '<p>Hello %s,</p><p>Your password reset request has been approved.</p><p>Your temporary password is: <strong>%s</strong></p><p>Please log in with your Staff ID and this temporary password, then change it immediately after login.</p><p>If you did not request this change, contact support right away.</p>',
+            htmlspecialchars((string) ($user['full_name'] ?? 'Teacher'), ENT_QUOTES, 'UTF-8'),
+            htmlspecialchars($tempPassword, ENT_QUOTES, 'UTF-8')
+        );
+        $textBody = sprintf(
+            "Hello %s,\n\nYour password reset request has been approved.\n\nYour temporary password is: %s\n\nPlease log in with your Staff ID and this temporary password, then change it immediately after login.\n\nIf you did not request this change, contact support right away.",
+            (string) ($user['full_name'] ?? 'Teacher'),
+            $tempPassword
+        );
+
+        try {
+            $this->mailService->sendMail($recipientEmail, $subject, $htmlBody, $textBody);
+        } catch (\Throwable $e) {
+            \App\Helpers\logger_helper('mail_error', 'VP password reset email failed for user ' . (int) $user['id'] . ': ' . $e->getMessage());
+            $this->json([
+                'success' => true,
+                'message' => 'Password reset approved, but the email could not be sent: ' . $e->getMessage(),
+                'data' => ['temp_password' => $tempPassword],
+            ], 200);
+            return;
+        }
+
+        // On success do not expose the temporary password to the approver
+        $this->json([
+            'success' => true,
+            'message' => 'Password reset approved. Temporary password sent to the teacher email.',
+        ]);
     }
 
     // NOTE: Spec only defines PENDING, APPROVED, EXPIRED statuses.
@@ -1407,20 +1445,6 @@ class VPController extends BaseController
         $chk1->execute(['sid' => $subjectId]);
         if ($chk1->fetch()) {
             $this->json(['success' => false, 'message' => 'This subject is already assigned to a teacher'], 409);
-            return;
-        }
-
-        // Spec: PHP pre-INSERT check — teacher cannot have two assignments in same semester
-        $chk2 = $db->prepare(
-            'SELECT ta.id FROM teacher_assignments ta
-             JOIN subjects s ON ta.subject_id = s.id
-             WHERE ta.teacher_id = :tid
-               AND s.semester_id = (SELECT semester_id FROM subjects WHERE id = :sid)
-             LIMIT 1'
-        );
-        $chk2->execute(['tid' => $teacherId, 'sid' => $subjectId]);
-        if ($chk2->fetch()) {
-            $this->json(['success' => false, 'message' => 'Teacher already has an assignment in this semester'], 409);
             return;
         }
 

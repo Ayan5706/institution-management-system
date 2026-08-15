@@ -254,7 +254,6 @@ class AuthController extends BaseController
 
         if ($user) {
             $role = strtoupper((string) ($user['role'] ?? ''));
-            $requiresEmailVerification = in_array($role, ['VP', 'MANAGER', 'ACCOUNTANT'], true);
             $allowedRoles = ['VP', 'MANAGER', 'ACCOUNTANT', 'TEACHER', 'STUDENT'];
 
             if ($role === 'PRINCIPAL') {
@@ -313,76 +312,48 @@ class AuthController extends BaseController
                 return;
             }
 
-            // For VP, Manager, Accountant: Send email verification first
-            if ($requiresEmailVerification) {
-                try {
-                    // Check if there's already a pending verification
-                    $existingVerifications = $verificationModel->where('user_id', (int) $user['id']);
-                    foreach ($existingVerifications as $verification) {
-                        if ($verification['verified_at'] === null) {
-                            $expiresAt = strtotime((string) $verification['expires_at']);
-                            if ($expiresAt > time()) {
-                                $this->view('auth.forgot_password', [
-                                    'title' => 'Forgot Password',
-                                    'message' => 'An email verification link has already been sent to your email. Please check your inbox and verify your email.',
-                                ]);
-                                return;
-                            }
-                        }
+            if (in_array($role, ['VP', 'MANAGER', 'ACCOUNTANT'], true)) {
+                $requests = $resetModel->where('requested_by', (int) $user['id']);
+                foreach ($requests as $request) {
+                    if (strtoupper((string) ($request['status'] ?? '')) === 'PENDING') {
+                        $this->view('auth.forgot_password', [
+                            'title' => 'Forgot Password',
+                            'message' => 'A password reset request is already pending approval. Please wait for confirmation.',
+                        ]);
+                        return;
                     }
+                }
 
-                    // Clear old verification tokens for this user
-                    $verificationModel->clearActiveForUser((int) $user['id']);
+                $resetModel->create([
+                    'requested_by' => (int) $user['id'],
+                    'status' => 'PENDING',
+                    'created_at' => date('Y-m-d H:i:s'),
+                ]);
 
-                    // Create a new verification token
-                    $token = bin2hex(random_bytes(32));
-                    $tokenHash = hash('sha256', $token);
-                    $expiresAt = gmdate('Y-m-d H:i:s', time() + 3600);
-
-                    $verificationModel->create([
-                        'user_id' => (int) $user['id'],
-                        'token_hash' => $tokenHash,
-                        'expires_at' => $expiresAt,
-                        'verified_at' => null,
-                        'created_at' => gmdate('Y-m-d H:i:s'),
-                    ]);
-
-                    // Send verification email
+                try {
                     $mailService = new MailService();
-                    $subject = 'Verify Your Email - IMS Password Reset';
+                    $subject = 'Password Reset Request Submitted - IMS';
                     $name = (string) ($user['full_name'] ?? 'User');
-                    $verificationLink = url('verify-password-reset-email?token=' . $token);
                     $htmlBody = '<p>Hello ' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . ',</p>'
-                        . '<p>You have requested to reset your password. Please verify your email by clicking the link below before submitting your reset request to the Principal.</p>'
-                        . '<p><a href="' . htmlspecialchars($verificationLink, ENT_QUOTES, 'UTF-8') . '">Verify Email</a></p>'
-                        . '<p>This link expires in 60 minutes.</p>'
-                        . '<p>If you did not request a password reset, please ignore this email.</p>'
+                        . '<p>Your password reset request has been submitted to the Principal for approval.</p>'
+                        . '<p>You will receive an email notification once the Principal reviews your request.</p>'
                         . '<p>— IMS Admin</p>';
                     $textBody = "Hello {$name},\n\n"
-                        . "You have requested to reset your password. Please verify your email by using the link below (valid for 60 minutes):\n"
-                        . "{$verificationLink}\n\n"
-                        . "If you did not request a password reset, please ignore this email.\n\n"
+                        . "Your password reset request has been submitted to the Principal for approval.\n"
+                        . "You will receive an email notification once the Principal reviews your request.\n\n"
                         . "— IMS Admin";
                     $mailService->sendMail((string) $user['email'], $subject, $htmlBody, $textBody);
-
-                    $this->view('auth.forgot_password', [
-                        'title' => 'Forgot Password',
-                        'message' => 'An email verification link has been sent to your email. Please verify your email before submitting your reset request.',
-                    ]);
-                    return;
                 } catch (\Throwable $mailError) {
-                    \App\Helpers\logger_helper('mail_error', 'Password reset verification email failed: ' . $mailError->getMessage());
-                    $debug = (bool) Config::get('app.debug', false);
-                    $detail = $debug ? ' (' . $mailError->getMessage() . ')' : '';
-                    $this->view('auth.forgot_password', [
-                        'title' => 'Forgot Password',
-                        'error' => 'Unable to send the verification email. Please contact support.' . $detail,
-                    ]);
-                    return;
+                    \App\Helpers\logger_helper('mail_error', 'Password reset request email failed: ' . $mailError->getMessage());
                 }
+
+                $this->view('auth.forgot_password', [
+                    'title' => 'Forgot Password',
+                    'message' => 'Your password reset request has been submitted to the Principal for approval. Please check your email for confirmation.',
+                ]);
+                return;
             }
 
-            // Check for pending requests (Teacher -> VP, Student -> Manager)
             $requests = $resetModel->where('requested_by', (int) $user['id']);
             foreach ($requests as $request) {
                 if (strtoupper((string) ($request['status'] ?? '')) === 'PENDING') {
@@ -394,7 +365,6 @@ class AuthController extends BaseController
                 }
             }
 
-            // Create reset request
             $resetModel->create([
                 'requested_by' => (int) $user['id'],
                 'status' => 'PENDING',

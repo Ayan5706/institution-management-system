@@ -1300,17 +1300,15 @@ class PrincipalController extends BaseController
             }
 
             if ($emailSent) {
+                // Email sent to the target user; do not include the temporary password in the response
                 $this->json([
                     'success' => true,
-                    'message' => 'Password reset approved and email sent.',
-                    'data'    => [
-                        'temp_password' => $tempPassword,
-                        'user_email'    => $user['email'],
-                    ],
+                    'message' => 'Password reset approved and email sent to the user.',
                 ]);
                 return;
             }
 
+            // Email failed — return temporary password so the principal can notify the user manually
             $this->json([
                 'success' => true,
                 'message' => 'Password reset approved, but email delivery failed. Use the temporary password below to notify the user manually.',

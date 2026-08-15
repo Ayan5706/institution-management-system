@@ -236,8 +236,14 @@ $pending_resets = $pending_resets ?? [];
                             </td>
                             <td>
                                 <div class="action-buttons">
-                                    <button onclick="approveRequest(<?php echo (int) ($request['id'] ?? 0); ?>, <?php echo json_encode($request['full_name'] ?? ''); ?>)" class="btn-approve">Approve</button>
-                                    <button onclick="rejectRequest(<?php echo (int) ($request['id'] ?? 0); ?>, <?php echo json_encode($request['full_name'] ?? ''); ?>)" class="btn-reject">Reject</button>
+                                        <button type="button"
+                                            class="btn-approve js-approve-request"
+                                            data-request-id="<?php echo (int) ($request['id'] ?? 0); ?>"
+                                            data-request-name="<?php echo e($request['full_name'] ?? ''); ?>">Approve</button>
+                                        <button type="button"
+                                            class="btn-reject js-reject-request"
+                                            data-request-id="<?php echo (int) ($request['id'] ?? 0); ?>"
+                                            data-request-name="<?php echo e($request['full_name'] ?? ''); ?>">Reject</button>
                                 </div>
                             </td>
                         </tr>
@@ -296,7 +302,7 @@ $pending_resets = $pending_resets ?? [];
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            showMessage('✓ ' + (data.message || 'Password reset approved') + (data.temp_password ? ' Temporary password: ' + data.temp_password : ''), 'success');
+                            showMessage('✓ ' + (data.message || 'Password reset approved'), 'success');
                             const row = document.getElementById('row-' + id);
                             if (row) setTimeout(() => row.remove(), 2000);
                             setTimeout(() => location.reload(), 2500);
@@ -379,7 +385,18 @@ $pending_resets = $pending_resets ?? [];
             confirmAction = null;
         }
 
-        filterRequests();
+        document.querySelectorAll('.js-approve-request').forEach((button) => {
+            button.addEventListener('click', () => {
+                approveRequest(Number(button.dataset.requestId || 0), button.dataset.requestName || '');
+            });
+        });
+
+        document.querySelectorAll('.js-reject-request').forEach((button) => {
+            button.addEventListener('click', () => {
+                rejectRequest(Number(button.dataset.requestId || 0), button.dataset.requestName || '');
+            });
+        });
+
     </script>
 </div>
 

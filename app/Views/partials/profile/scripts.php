@@ -192,7 +192,7 @@
         }
 
         const validateEmailField = (emailInput, errorElement) => {
-            const gmailRegex = /^[A-Za-z0-9]+@gmail\.com$/;
+            const emailRegex = /[^@\s]+@[^@\s]+\.[^@\s]+/;
             const value = emailInput.value.trim();
 
             if (value === '') {
@@ -201,8 +201,8 @@
                 return false;
             }
 
-            if (!gmailRegex.test(value)) {
-                errorElement.textContent = 'Please enter a valid Gmail address (example: name@gmail.com).';
+            if (!emailRegex.test(value)) {
+                errorElement.textContent = 'Please enter a valid email address.';
                 errorElement.style.display = 'block';
                 return false;
             }
@@ -251,23 +251,23 @@
                 return;
             }
 
-            // Validate email format - Gmail only with letters/numbers before @
-            const gmailRegex = /^[A-Za-z0-9]+@gmail\.com$/;
-            if (!gmailRegex.test(newEmail)) {
+            // Validate email format before submitting the OTP request
+            const emailRegex = /[^@\s]+@[^@\s]+\.[^@\s]+/;
+            if (!emailRegex.test(newEmail)) {
                 if (newEmailError) {
-                    newEmailError.textContent = 'Please enter a valid Gmail address (example: name@gmail.com).';
+                    newEmailError.textContent = 'Please enter a valid email address.';
                     newEmailError.style.display = 'block';
                 }
-                showMessage(emailError, 'Please enter a valid Gmail address (example: name@gmail.com).', false);
+                showMessage(emailError, 'Please enter a valid email address.', false);
                 return;
             }
 
-            if (!gmailRegex.test(confirmEmail)) {
+            if (!emailRegex.test(confirmEmail)) {
                 if (confirmEmailError) {
-                    confirmEmailError.textContent = 'Please enter a valid Gmail address (example: name@gmail.com).';
+                    confirmEmailError.textContent = 'Please enter a valid email address.';
                     confirmEmailError.style.display = 'block';
                 }
-                showMessage(emailError, 'Please enter a valid Gmail address (example: name@gmail.com).', false);
+                showMessage(emailError, 'Please enter a valid email address.', false);
                 return;
             }
 

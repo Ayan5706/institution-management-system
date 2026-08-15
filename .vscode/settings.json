@@ -1,0 +1,9 @@
+{
+  "simpleBrowser.focusSimpleBrowser": false,
+  "workbench.action.openDevTools": "never",
+  "security.workspace.trust.startupPrompt": "never",
+  "https.strict": false,
+  "[html]": {
+    "editor.defaultFormatter": "vscode.html-language-features"
+  }
+}

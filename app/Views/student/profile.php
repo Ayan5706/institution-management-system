@@ -361,13 +361,13 @@ $profile_not_found = $profile_not_found ?? false;
 
                 <div class="form-group">
                     <label class="form-label" for="new_email">New Email</label>
-                    <input type="email" id="new_email" name="new_email" class="form-input" placeholder="Enter new email" required value="<?php echo e($emailVerificationEmail); ?>" <?php echo !empty($emailRequestPending) ? 'disabled' : ''; ?> <?php echo !empty($emailVerificationPending) ? 'readonly' : ''; ?>>
+                    <input type="email" id="new_email" name="new_email" class="form-input" placeholder="Enter new email" pattern="[^@\s]+@[^@\s]+\.[^@\s]+" required value="<?php echo e($emailVerificationEmail); ?>" <?php echo !empty($emailRequestPending) ? 'disabled' : ''; ?> <?php echo !empty($emailVerificationPending) ? 'readonly' : ''; ?>>
                     <div class="inline-error" id="new-email-error" style="display: none;"></div>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" for="confirm_email">Confirm New Email</label>
-                    <input type="email" id="confirm_email" name="confirm_email" class="form-input" placeholder="Confirm new email" required value="<?php echo e($emailVerificationEmail); ?>" <?php echo !empty($emailRequestPending) ? 'disabled' : ''; ?> <?php echo !empty($emailVerificationPending) ? 'readonly' : ''; ?>>
+                    <input type="email" id="confirm_email" name="confirm_email" class="form-input" placeholder="Confirm new email" pattern="[^@\s]+@[^@\s]+\.[^@\s]+" required value="<?php echo e($emailVerificationEmail); ?>" <?php echo !empty($emailRequestPending) ? 'disabled' : ''; ?> <?php echo !empty($emailVerificationPending) ? 'readonly' : ''; ?>>
                     <div class="inline-error" id="confirm-email-error" style="display: none;"></div>
                 </div>
 

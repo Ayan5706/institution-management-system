@@ -1390,6 +1390,7 @@ class ManagerController extends BaseController
             $user = $this->userModel->find((int) $reset['requested_by']);
             if ($user && strtoupper($user['role']) === 'STUDENT') {
                 $reset['user_name'] = $user['full_name'];
+                $reset['user_email'] = $user['email'];
                 $reset['user_role'] = $user['role'];
                 $reset['login_id'] = $user['login_id'];
                 $studentResets[] = $reset;
@@ -1443,11 +1444,47 @@ class ManagerController extends BaseController
             'resolved_at' => date('Y-m-d H:i:s'),
         ]);
 
+        // Attempt to email the temporary password to the student
+        $recipientEmail = trim((string) ($user['email'] ?? ''));
+        if ($recipientEmail === '') {
+            // No email on file — return temp password so manager can communicate it manually
+            $this->json([
+                'success' => true,
+                'message' => 'Password reset approved, but the student has no email on file. Please share the temporary password manually.',
+                'temporary_password' => $tempPassword,
+            ]);
+            return;
+        }
 
+        $subject = 'Your IMS password reset has been approved';
+        $htmlBody = sprintf(
+            '<p>Hello %s,</p><p>Your password reset request has been approved.</p><p>Your temporary password is: <strong>%s</strong></p><p>Please log in with your Student ID and this temporary password, then change it immediately after login.</p><p>If you did not request this change, contact support right away.</p>',
+            htmlspecialchars((string) ($user['full_name'] ?? 'Student'), ENT_QUOTES, 'UTF-8'),
+            htmlspecialchars($tempPassword, ENT_QUOTES, 'UTF-8')
+        );
+        $textBody = sprintf(
+            "Hello %s,\n\nYour password reset request has been approved.\n\nYour temporary password is: %s\n\nPlease log in with your Student ID and this temporary password, then change it immediately after login.\n\nIf you did not request this change, contact support right away.",
+            (string) ($user['full_name'] ?? 'Student'),
+            $tempPassword
+        );
+
+        try {
+            $this->mailService->sendMail($recipientEmail, $subject, $htmlBody, $textBody);
+        } catch (\Throwable $e) {
+            \App\Helpers\logger_helper('mail_error', 'Manager password reset email failed for user ' . (int) $user['id'] . ': ' . $e->getMessage());
+            // Email failed — return temp password so manager can communicate it manually
+            $this->json([
+                'success' => true,
+                'message' => 'Password reset approved, but the email could not be sent: ' . $e->getMessage(),
+                'temporary_password' => $tempPassword,
+            ], 200);
+            return;
+        }
+
+        // Email sent successfully — do not expose the temporary password to the approver
         $this->json([
             'success' => true,
-            'message' => 'Password reset approved.',
-            'temporary_password' => $tempPassword,
+            'message' => 'Password reset approved. Temporary password sent to the student email.',
         ]);
     }
 

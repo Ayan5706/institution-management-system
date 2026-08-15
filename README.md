@@ -430,31 +430,21 @@ Provides a common platform for different departments and users.
 
 ---
 
-# 🚀 How to Run the Institution Management System (IMS)
+# How to Run the Institution Management System (IMS)
 
-## 🧰 Required Software
+## Step 1: Install Required Software
 
-Before running IMS, make sure the following software is installed:
+Install the following software on your computer:
 
-┌────────────────────┐
-│ 🟠 XAMPP           │
-│ Apache + MySQL     │
-└────────────────────┘
+- XAMPP
+- Visual Studio Code
+- Google Chrome or Microsoft Edge
 
-┌────────────────────┐
-│ 💻 VS Code         │
-│ Code Editor        │
-└────────────────────┘
+Make sure your system has PHP and MySQL available through XAMPP.
 
-┌────────────────────┐
-│ 🌐 Chrome / Edge   │
-│ Web Browser        │
-└────────────────────┘
+## Step 2: Get the Project
 
-
-## 1️⃣ Get the Project
-
-📥 Download or clone the IMS project.
+Download or clone the Institution Management System (IMS) project.
 
 Place the project folder inside:
 
@@ -464,182 +454,78 @@ Example:
 
 C:\xampp\htdocs\IMS\
 
+## Step 3: Start XAMPP
 
-## 2️⃣ Start XAMPP
-
-⚙️ Open the XAMPP Control Panel.
+Open the XAMPP Control Panel.
 
 Start the following services:
 
-┌────────────────────┐
-│ Apache   → 🟢      │
-│ MySQL    → 🟢      │
-└────────────────────┘
+Apache  → Start
+MySQL   → Start
 
-✅ Make sure both Apache and MySQL are running successfully.
+Make sure both services are running successfully.
 
+## Step 4: Create the Database
 
-## 3️⃣ Create the Database
-
-🗄️ Open phpMyAdmin in your browser:
+Open a web browser and go to:
 
 http://localhost/phpmyadmin/
 
-Then:
+Create the required MySQL database for the IMS project.
 
-1. Create the required IMS database.
-2. Select the newly created database.
-3. Import the project's SQL/database file.
-4. Make sure all required tables are created successfully.
+Import the project's SQL/database file into the newly created database.
 
+## Step 5: Configure the Database Connection
 
-## 4️⃣ Configure the Database Connection
+Open the IMS project in Visual Studio Code.
 
-🔧 Open the IMS project in Visual Studio Code.
+Locate the database configuration file in the project.
 
-Locate the database configuration file.
+Configure the following values according to your local MySQL setup:
 
-Configure the following details:
+- Database Host
+- Database Name
+- Database Username
+- Database Password
 
-┌────────────────────────────┐
-│ 🖥️ Database Host           │
-│ 🗄️ Database Name           │
-│ 👤 Database Username       │
-│ 🔑 Database Password       │
-└────────────────────────────┘
+Save the configuration.
 
-💾 Save the configuration after entering the correct local MySQL details.
+## Step 6: Run the Application
 
+Make sure Apache and MySQL are running in XAMPP.
 
-## 5️⃣ Run the Application
-
-▶️ Before running the application, make sure:
-
-┌────────────────────────────┐
-│ Apache → 🟢 Running        │
-│ MySQL  → 🟢 Running        │
-└────────────────────────────┘
-
-Then open your web browser.
-
-🌐 Application URL:
+Open Google Chrome or Microsoft Edge and enter:
 
 http://localhost/IMS/
 
-If the project is configured directly as the Apache document root,
-use the corresponding localhost URL.
+If the project is configured as the Apache document root, open the corresponding localhost URL.
 
+## Step 7: Login
 
-## 6️⃣ Login
-
-🔐 The IMS Login Page will appear.
+The IMS login page will be displayed.
 
 Enter the login credentials provided by the system administrator.
 
-After successful authentication, the system will display the features
-available according to the user's assigned role.
+After successful login, the system will provide access according to the user's assigned role.
 
+## Step 8: Use the System
 
-## 7️⃣ Select Your Module
+Users can access the functions available to their role:
 
-👥 IMS provides different functionality according to the user's role.
+- Principal → Overall system supervision
+- Vice Principal → Academic management
+- Manager → Student and administrative management
+- Accountant → Fee management
+- Teacher → Attendance, subjects, and timetable
+- Student → Attendance, timetable, and fee information
 
-┌────────────────────────────────┐
-│ 👨‍💼 Principal                  │
-│ Overall System Supervision     │
-└────────────────────────────────┘
+## Important Notes
 
-┌────────────────────────────────┐
-│ 👨‍💼 Vice Principal             │
-│ Academic Management            │
-└────────────────────────────────┘
-
-┌────────────────────────────────┐
-│ 👨‍💼 Manager                    │
-│ Student & Administration       │
-└────────────────────────────────┘
-
-┌────────────────────────────────┐
-│ 💰 Accountant                  │
-│ Fee Management                 │
-└────────────────────────────────┘
-
-┌────────────────────────────────┐
-│ 👨‍🏫 Teacher                    │
-│ Attendance / Subjects          │
-│ / Timetable                    │
-└────────────────────────────────┘
-
-┌────────────────────────────────┐
-│ 👨‍🎓 Student                   │
-│ Attendance / Timetable         │
-│ / Fee Information              │
-└────────────────────────────────┘
-
-
-## 8️⃣ Start Using IMS
-
-🎯 After logging in, users can access the functions available
-according to their assigned role.
-
-📊 Main system areas include:
-
-┌───────────────────┬──────────────────────┐
-│ 👨‍🎓 Students      │ 📅 Attendance        │
-├───────────────────┼──────────────────────┤
-│ 📚 Programs       │ 🕐 Timetable         │
-├───────────────────┼──────────────────────┤
-│ 📖 Subjects       │ 💰 Fees              │
-├───────────────────┼──────────────────────┤
-│ 👨‍🏫 Teachers      │ 👥 User Management   │
-└───────────────────┴──────────────────────┘
-
-
-## 🔄 Quick Run Flow
-
-┌──────────────────────────────────────┐
-│ 📥 Get the IMS Project               │
-│                 ↓                    │
-│ 📂 Place it in C:\xampp\htdocs\     │
-│                 ↓                    │
-│ ⚙️ Start XAMPP                       │
-│                 ↓                    │
-│ 🟢 Start Apache + MySQL              │
-│                 ↓                    │
-│ 🗄️ Create / Import Database          │
-│                 ↓                    │
-│ 🔧 Configure Database Connection     │
-│                 ↓                    │
-│ 🌐 Open http://localhost/IMS/        │
-│                 ↓                    │
-│ 🔐 Login                             │
-│                 ↓                    │
-│ 👥 Select User Module                │
-│                 ↓                    │
-│ 🚀 Start Using IMS                   │
-└──────────────────────────────────────┘
-
-
-## ⚠️ Important Notes
-
-┌──────────────────────────────────────────────┐
-│ ⚠️ IMPORTANT                                │
-│                                              │
-│ 🔒 Do not share database passwords or       │
-│    private credentials.                     │
-│                                              │
-│ 🗄️ Make sure the database is configured     │
-│    correctly.                               │
-│                                              │
-│ 🟢 Apache and MySQL must be running before  │
-│    opening IMS.                              │
-│                                              │
-│ 💾 Keep development and production          │
-│    configurations separate.                 │
-│                                              │
-│ 🌐 Use Google Chrome or Microsoft Edge      │
-│    to access the application.               │
-└──────────────────────────────────────────────┘
+- Apache and MySQL must be running before using the application.
+- The database configuration must match your local MySQL settings.
+- Do not share or commit database passwords and other private credentials.
+- Keep environment-specific configuration separate for development and production.
+  
 
 # 🏁 Conclusion
 

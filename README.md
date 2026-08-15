@@ -430,6 +430,202 @@ Provides a common platform for different departments and users.
 
 ---
 
+# 🚀 How to Run the Institution Management System (IMS)
+
+## 🧰 Required Software
+
+Before running IMS, make sure the following are installed:
+
+┌────────────────────┐
+│ 🟠 XAMPP           │
+│ Apache + MySQL     │
+└────────────────────┘
+
+┌────────────────────┐
+│ 💻 VS Code         │
+│ Code Editor        │
+└────────────────────┘
+
+┌────────────────────┐
+│ 🌐 Chrome / Edge   │
+│ Web Browser        │
+└────────────────────┘
+
+
+## 1️⃣ Get the Project
+
+📥 Download or clone the IMS project.
+
+Place the project folder inside:
+
+C:\xampp\htdocs\
+
+Example:
+
+C:\xampp\htdocs\IMS\
+
+
+## 2️⃣ Start XAMPP
+
+⚙️ Open the XAMPP Control Panel.
+
+Start the following services:
+
+┌───────────────┐
+│ Apache   🟢   │
+│ MySQL    🟢   │
+└───────────────┘
+
+✅ Both Apache and MySQL must be running.
+
+
+## 3️⃣ Create the Database
+
+🗄️ Open phpMyAdmin:
+
+http://localhost/phpmyadmin/
+
+Then:
+
+1. Create the required IMS database.
+2. Select the database.
+3. Import the project's SQL/database file.
+4. Make sure the required tables are created successfully.
+
+
+## 4️⃣ Configure Database Connection
+
+🔧 Open the IMS project in Visual Studio Code.
+
+Locate the database configuration file.
+
+Configure:
+
+┌────────────────────────┐
+│ 🖥️ Database Host      │
+│ 🗄️ Database Name      │
+│ 👤 Database Username  │
+│ 🔑 Database Password  │
+└────────────────────────┘
+
+💾 Save the configuration after entering the correct local MySQL details.
+
+
+## 5️⃣ Run the Application
+
+▶️ Make sure:
+
+Apache  → 🟢 Running
+MySQL   → 🟢 Running
+
+Then open your browser.
+
+🌐 Application URL:
+
+http://localhost/IMS/
+
+If the project is configured directly as the Apache document root, use the corresponding localhost URL.
+
+
+## 6️⃣ Login
+
+🔐 The IMS Login Page will appear.
+
+Enter the credentials provided by the system administrator.
+
+After successful authentication, the system will display the features available to the user's assigned role.
+
+
+## 7️⃣ Select Your Module
+
+👥 IMS provides different functionality according to the user's role.
+
+┌─────────────────────────────┐
+│ 👨‍💼 Principal               │
+│ Overall System Supervision  │
+└─────────────────────────────┘
+
+┌─────────────────────────────┐
+│ 👨‍💼 Vice Principal          │
+│ Academic Management         │
+└─────────────────────────────┘
+
+┌─────────────────────────────┐
+│ 👨‍💼 Manager                 │
+│ Student & Administration   │
+└─────────────────────────────┘
+
+┌─────────────────────────────┐
+│ 💰 Accountant               │
+│ Fee Management              │
+└─────────────────────────────┘
+
+┌─────────────────────────────┐
+│ 👨‍🏫 Teacher                 │
+│ Attendance / Subjects       │
+│ / Timetable                 │
+└─────────────────────────────┘
+
+┌─────────────────────────────┐
+│ 👨‍🎓 Student                │
+│ Attendance / Timetable      │
+│ / Fee Information           │
+└─────────────────────────────┘
+
+
+## 8️⃣ Start Using IMS
+
+🎯 After login, users can access the functions available to their role.
+
+📊 Main system areas include:
+
+┌─────────────────┬────────────────────┐
+│ 👨‍🎓 Students    │ 📅 Attendance      │
+├─────────────────┼────────────────────┤
+│ 📚 Programs     │ 🕐 Timetable        │
+├─────────────────┼────────────────────┤
+│ 📖 Subjects     │ 💰 Fees             │
+├─────────────────┼────────────────────┤
+│ 👨‍🏫 Teachers    │ 👥 User Management │
+└─────────────────┴────────────────────┘
+
+
+## 🔄 Quick Run Flow
+
+📥 Get Project
+      ↓
+📂 Place in C:\xampp\htdocs\
+      ↓
+⚙️ Start XAMPP
+      ↓
+🟢 Start Apache + MySQL
+      ↓
+🗄️ Create / Import Database
+      ↓
+🔧 Configure Database Connection
+      ↓
+🌐 Open http://localhost/IMS/
+      ↓
+🔐 Login
+      ↓
+👥 Select User Module
+      ↓
+🚀 Start Using IMS
+
+
+## ⚠️ Important Notes
+
+🔒 Do not share database passwords or private credentials.
+
+🗄️ Make sure the database is configured correctly.
+
+🟢 Apache and MySQL must be running before opening IMS.
+
+💾 Keep development and production configuration separate.
+
+🌐 Use Google Chrome or Microsoft Edge for accessing the application.
+
+
 # 🏁 Conclusion
 
 The **Institution Management System (IMS)** is a centralized web-based solution developed to improve the management of academic and administrative activities within an educational institution.

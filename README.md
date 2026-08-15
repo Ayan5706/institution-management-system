@@ -1,460 +1,441 @@
-﻿Absolutely. Here is a **clearer, more professional, and interactive README-style version** of your text, without changing the core meaning:
+Here is your **cleaned final document with ONLY the Data Flow section removed (everything else unchanged and polished formatting preserved):**
+
+---
 
 # Institution Management System (IMS)
 
-**Institution Management System (IMS)** is a web-based platform designed to simplify and centralize the **academic and administrative operations** of an educational institution.
+## Project Overview
 
-Instead of managing student records, attendance, fees, timetables, teachers, and reports across separate spreadsheets or systems, IMS brings everything together in **one structured and secure application**.
+The **Institution Management System (IMS)** is a web-based application developed to **streamline and automate the academic and administrative operations of an educational institution**.
+
+The system provides a centralized platform for managing important institutional activities such as **student records, programs, semesters, subjects, timetable scheduling, attendance, and fee management**.
+
+The main purpose of IMS is to replace manual and partially computerized processes with a **centralized, secure, accurate, and user-friendly system**.
 
 ---
 
 ## 🎯 Project Purpose
 
-The primary goal of IMS is to **reduce manual work, improve data accuracy, and streamline institutional workflows**.
+The primary objective of the Institution Management System is to bring different institutional activities together into a **single integrated platform**.
 
-With IMS, administrators and academic staff can:
+The system is designed to:
 
-* Manage student and teacher information
-* Track student attendance
-* Manage semesters and fees
-* Organize timetables
-* Generate institutional reports
-* Control user access and permissions
-* Handle email verification and account workflows
+* Reduce manual workload
+* Minimize human errors
+* Avoid data redundancy
+* Improve data consistency
+* Provide centralized data management
+* Improve coordination between departments
+* Make information easier to access and update
+* Support faster decision-making
+* Improve the overall efficiency of institutional operations
 
-> **One platform → Multiple departments → Centralized management**
-
----
-
-## 🚀 Key Features
-
-| Module                       | Description                                                |
-| ---------------------------- | ---------------------------------------------------------- |
-| 👨‍🎓 **Student Management** | Manage student profiles, academic information, and records |
-| 👨‍🏫 **Teacher Management** | Maintain teacher records and subject assignments           |
-| 📅 **Attendance**            | Record, monitor, and manage student attendance             |
-| 💰 **Fee Management**        | Manage semesters, fees, and payment-related information    |
-| 🕐 **Timetable**             | Create and organize class schedules                        |
-| 📊 **Reports**               | Generate useful reports for institutional decision-making  |
-| 🔐 **Authentication**        | Secure login and account management                        |
-| 👥 **Role Management**       | Control access based on user roles and permissions         |
-| 📧 **Email Workflow**        | Support account verification and email-based processes     |
+The system was designed after analyzing existing processes within the institution and identifying problems related to manual data handling, lack of integration, and time-consuming operations.
 
 ---
 
-## 👥 User Roles
+# 👥 User Roles
 
-IMS follows a **role-based access control (RBAC)** approach.
+IMS follows a **role-based access approach**, where each user can access functionality according to their responsibilities.
 
-### 🔴 Admin
+### 👨‍💼 Principal
 
-Responsible for overall system administration.
+The Principal module is responsible for overall system supervision and management.
 
-* Manage users
-* Configure system settings
-* Control permissions
-* Manage institutional data
-* Monitor system operations
+**Main responsibilities:**
 
-### 🟣 Principal / Management
+* Supervise system operations
+* Monitor users
+* Oversee institutional activities
 
-Responsible for institutional monitoring and approvals.
+### 👨‍💼 Vice Principal
 
-* Monitor institutional performance
-* Review reports
-* Monitor academic activities
-* Handle approvals and management decisions
+The Vice Principal module focuses mainly on academic management.
 
-### 🔵 Teacher
+**Main responsibilities:**
 
-Responsible for academic and class-related activities.
+* Manage programs
+* Manage semesters
+* Manage subjects
+* Manage teachers
+* Manage timetable-related activities
 
+### 👨‍💼 Manager
+
+The Manager module handles student and administrative activities.
+
+**Main responsibilities:**
+
+* Manage student enrollment
+* Maintain student records
+* Handle administrative tasks
+
+### 💰 Accountant
+
+The Accountant module manages financial activities.
+
+**Main responsibilities:**
+
+* Manage fees
+* Track payments
+* Maintain financial records
+
+### 👨‍🏫 Teacher
+
+The Teacher module supports academic activities.
+
+**Main responsibilities:**
+
+* Mark student attendance
+* View timetable
 * View assigned subjects
-* Manage class-related information
-* Record attendance
-* Perform assigned academic responsibilities
 
-### 🟢 Student
+### 👨‍🎓 Student
 
-Responsible for accessing their own academic information.
+The Student module allows students to access their academic and financial information.
 
-* View profile
-* Access academic information
-* Check attendance-related information
-* Access relevant institutional information
+**Main responsibilities:**
+
+* View attendance
+* View timetable
+* View fee details
+
+These six roles and their responsibilities are defined in the system design of the project.
+
+---
+
+# 🧩 Core System Modules
+
+The Institution Management System is organized into several interconnected modules.
+
+```text
+                    INSTITUTION
+                  MANAGEMENT SYSTEM
+                         │
+       ┌─────────────────┼─────────────────┐
+       │                 │                 │
+       ▼                 ▼                 ▼
+   USER / ROLE       ACADEMIC          STUDENT
+   MANAGEMENT        MANAGEMENT       MANAGEMENT
+       │                 │                 │
+       │        ┌────────┼────────┐        │
+       │        ▼        ▼        ▼        │
+       │     Programs Semesters Subjects   │
+       │                                   │
+       └───────────────┬───────────────────┘
+                       │
+          ┌────────────┼────────────┐
+          ▼            ▼            ▼
+      ATTENDANCE    TIMETABLE      FEES
+          │            │            │
+          └────────────┼────────────┘
+                       ▼
+                    MYSQL
+                   DATABASE
+```
+
+### 📚 Academic Management
+
+Academic management includes:
+
+* Programs
+* Semesters
+* Subjects
+* Teacher assignments
+* Timetable management
+
+### 👨‍🎓 Student Management
+
+Student management maintains important student information such as:
+
+* Student profile
+* Registration number
+* Date of birth
+* Program
+* Related academic information
+
+### 📅 Attendance Management
+
+The attendance module records:
+
+* Student
+* Date
+* Attendance status
+* Time at which attendance was marked
+
+### 💰 Fee Management
+
+The fee module manages student financial information, including:
+
+* Student
+* Semester
+* Amount paid
+* Fee-related records
+
+### 🕐 Timetable Management
+
+The timetable module manages:
+
+* Teacher assignments
+* Day
+* Start time
+* End time
+
+## The database design includes dedicated tables for users, programs, semesters, subjects, student profiles, attendance, student fees, teacher assignments, timetables, and system configuration.
 
 ---
 
 # 🏗️ System Architecture
 
-IMS follows a **lightweight MVC-style architecture** to keep the application organized, maintainable, and scalable.
+IMS follows a **three-tier architecture**.
 
 ```text
-                    ┌──────────────────────┐
-                    │       USER           │
-                    │ Admin / Teacher /    │
-                    │ Student / Principal  │
-                    └──────────┬───────────┘
-                               │
-                               ▼
-                    ┌──────────────────────┐
-                    │       ROUTES         │
-                    │ Request Routing      │
-                    └──────────┬───────────┘
-                               │
-                               ▼
-                    ┌──────────────────────┐
-                    │    MIDDLEWARE        │
-                    │ Auth / Authorization │
-                    └──────────┬───────────┘
-                               │
-                               ▼
-              ┌────────────────────────────────┐
-              │          CONTROLLERS            │
-              │ Request Handling & Business    │
-              │ Logic                          │
-              └───────────────┬────────────────┘
-                              │
-                    ┌─────────┴─────────┐
-                    ▼                   ▼
-          ┌──────────────────┐  ┌──────────────────┐
-          │      MODELS      │  │    SERVICES &    │
-          │ Database Logic   │  │    HELPERS       │
-          └────────┬─────────┘  └──────────────────┘
+┌─────────────────────────────────────┐
+│        PRESENTATION LAYER           │
+│ HTML + CSS + JavaScript + Bootstrap │
+└──────────────────┬──────────────────┘
                    │
                    ▼
-          ┌──────────────────┐
-          │      MySQL       │
-          │    Database      │
-          └──────────────────┘
+┌─────────────────────────────────────┐
+│         APPLICATION LAYER           │
+│                PHP                  │
+│ Business Logic + Validation         │
+└──────────────────┬──────────────────┘
                    │
                    ▼
-          ┌──────────────────┐
-          │      VIEWS       │
-          │   User Interface │
-          └──────────────────┘
+┌─────────────────────────────────────┐
+│             DATA LAYER              │
+│               MySQL                 │
+│      Structured & Normalized Data   │
+└─────────────────────────────────────┘
 ```
 
-### 🔄 Request Flow
+### 1. Presentation Layer
 
-```text
-User
-  ↓
-Route
-  ↓
-Middleware
-  ↓
-Controller
-  ↓
-Model / Service
-  ↓
-MySQL Database
-  ↓
-Controller
-  ↓
-View
-  ↓
-User
-```
+The frontend is developed using:
 
-This separation makes the application easier to **develop, debug, maintain, and extend**.
+* HTML
+* CSS
+* JavaScript
+* Bootstrap
+
+It provides the interface through which users interact with the system.
+
+### 2. Application Layer
+
+The backend is developed using **PHP**.
+
+It handles:
+
+* Business logic
+* Validation
+* Server-side processing
+* Communication between the frontend and database
+
+### 3. Data Layer
+
+**MySQL** is used as the database management system for storing and managing institutional information.
 
 ---
 
-# 🛠️ Technology Stack
+# 💻 Technology Stack
 
-| Technology          | Purpose                         |
-| ------------------- | ------------------------------- |
-| 🐘 **PHP 8+**       | Backend application development |
-| 🗄️ **MySQL**       | Database management             |
-| 📧 **PHPMailer**    | Email delivery and verification |
-| 🔑 **Firebase JWT** | Token-based authentication      |
-| 🌐 **Apache**       | Web server                      |
-| 💻 **XAMPP**        | Local development environment   |
+| Technology             | Purpose                            |
+| ---------------------- | ---------------------------------- |
+| **HTML**               | Web page structure                 |
+| **CSS**                | Interface styling                  |
+| **JavaScript**         | Client-side functionality          |
+| **Bootstrap**          | Responsive user interface          |
+| **PHP**                | Backend and server-side processing |
+| **MySQL**              | Database management                |
+| **Visual Studio Code** | Development environment            |
+| **XAMPP**              | Local development environment      |
 
----
-
-# 📁 Project Structure
-
-```text
-IMS/
-│
-├── app/
-│   ├── Config/
-│   ├── Controllers/
-│   ├── Models/
-│   ├── Views/
-│   ├── Middleware/
-│   ├── Services/
-│   └── Helpers/
-│
-├── public/
-│   ├── index.php
-│   ├── css/
-│   ├── js/
-│   └── assets/
-│
-├── routes/
-│   └── routes.php
-│
-├── database/
-│   └── ims_final_db.sql
-│
-├── storage/
-│   ├── sessions/
-│   ├── cache/
-│   ├── logs/
-│   ├── exports/
-│   └── temp/
-│
-└── README.md
-```
-
-### 📂 Folder Responsibilities
-
-**`app/`**
-Contains the main application logic.
-
-* `Controllers/` → Handles requests and application actions
-* `Models/` → Handles database operations
-* `Views/` → User-facing pages
-* `Middleware/` → Authentication and authorization
-* `Services/` → Reusable application services
-* `Helpers/` → Common utility functions
-* `Config/` → Application and environment configuration
-
-**`public/`**
-The application's public entry point and static resources.
-
-**`routes/`**
-Contains application route definitions.
-
-**`database/`**
-Contains database schemas, SQL files, and migrations.
-
-**`storage/`**
-Stores sessions, cache files, logs, exports, and temporary data.
+The report specifies **Windows 10/11 or higher**, Google Chrome/Microsoft Edge, Visual Studio Code/XAMPP, HTML/CSS/JavaScript/Bootstrap, PHP, and MySQL as the software environment.
 
 ---
 
-# ⚙️ Local Installation
+# 🗄️ Database Structure
 
-Follow these steps to run IMS on your local machine.
+The database is designed using a **structured and normalized approach** to reduce redundancy and maintain data integrity.
 
-### 1️⃣ Clone the Repository
-
-```bash
-git clone <repository-url>
-cd IMS
-```
-
-### 2️⃣ Configure the Database
-
-Create a MySQL database and import:
+Important tables include:
 
 ```text
-database/ims_final_db.sql
+USERS
+   │
+   ├── PROGRAMS
+   │      │
+   │      └── SEMESTERS
+   │              │
+   │              └── SUBJECTS
+   │
+   ├── STUDENT_PROFILES
+   │
+   ├── ATTENDANCE
+   │
+   ├── STUDENT_FEES
+   │
+   ├── TEACHER_ASSIGNMENTS
+   │
+   └── TIMETABLES
+
+SYSTEM_CONFIG
 ```
 
-You can import the file using **phpMyAdmin** or the MySQL command line.
-
-### 3️⃣ Configure the Application
-
-Update the configuration files inside:
-
-```text
-app/Config/
-```
-
-Configure:
-
-* Database credentials
-* Application environment
-* Mail server settings
-* JWT configuration
-* Other environment-specific settings
-
-### 4️⃣ Start XAMPP
-
-Start the following services from XAMPP:
-
-```text
-Apache  ✅
-MySQL   ✅
-```
-
-### 5️⃣ Configure the Web Root
-
-Configure Apache so that the application's public directory is used as the web root:
-
-```text
-IMS/public/
-```
-
-### 6️⃣ Open the Application
-
-Open your browser and navigate to:
-
-```text
-http://localhost/
-```
+## The `USERS` table stores role-based user information, while academic and operational tables maintain programs, semesters, subjects, student profiles, attendance, fees, teacher assignments, and timetable information.
 
 ---
 
-# 🔐 Security
+# 🔄 System Workflow
 
-IMS uses multiple mechanisms to protect application access and user accounts.
-
-### Authentication
-
-Users must authenticate before accessing protected resources.
-
-### Role-Based Authorization
-
-Access is controlled according to the user's role:
+The basic workflow of the system can be represented as:
 
 ```text
-Admin
+             USER LOGIN
+                  │
+                  ▼
+          ROLE IDENTIFICATION
+                  │
+        ┌─────────┼─────────┐
+        ▼         ▼         ▼
+    PRINCIPAL  TEACHER   STUDENT
+        │         │         │
+        ▼         ▼         ▼
+    MANAGEMENT ATTENDANCE  VIEW DATA
+        │         │         │
+        └─────────┼─────────┘
+                  ▼
+              PHP BACKEND
+                  │
+                  ▼
+             MYSQL DATABASE
+                  │
+                  ▼
+             SYSTEM OUTPUT
+```
+
+The system uses role-based access so that users receive functionality relevant to their responsibilities.
+
+---
+
+# 🔐 Security & Access Control
+
+IMS uses **role-based access control** to ensure that users can access only the functions relevant to their roles.
+
+For example:
+
+```text
+Principal
    ↓
-Full System Access
+Overall System Supervision
 
-Principal / Management
+Vice Principal
    ↓
-Monitoring & Approval Access
+Academic Management
+
+Manager
+   ↓
+Student & Administrative Management
+
+Accountant
+   ↓
+Fee & Financial Management
 
 Teacher
    ↓
-Academic & Attendance Access
+Attendance & Academic Information
 
 Student
    ↓
-Personal Academic Access
+Personal Academic & Fee Information
 ```
 
-### JWT
-
-Firebase JWT is used for token-based authentication where required.
-
-### Email Verification
-
-PHPMailer supports email-based account and verification workflows.
+This approach improves data security, system integrity, and workflow control.
 
 ---
 
-# 📊 System Workflow
+# 🖥️ Hardware Requirements
 
-A typical IMS workflow looks like this:
+The project report specifies the following minimum hardware requirements:
 
-```text
-                    LOGIN
-                      │
-                      ▼
-              ┌───────────────┐
-              │ Authentication │
-              └───────┬───────┘
-                      │
-                      ▼
-              ┌───────────────┐
-              │ Identify Role │
-              └───────┬───────┘
-                      │
-        ┌─────────────┼─────────────┐
-        ▼             ▼             ▼
-      ADMIN        TEACHER       STUDENT
-        │             │             │
-        ▼             ▼             ▼
-     Manage        Attendance     Academic
-     System        & Classes       Data
-        │             │             │
-        └─────────────┼─────────────┘
-                      ▼
-                 DATABASE
-                      │
-                      ▼
-                   REPORTS
-```
+* **Processor:** Intel Core i3 or higher
+* **RAM:** Minimum 4 GB
+* **Recommended RAM:** 8 GB
+* **Storage:** Minimum 100 GB available space
+* **System Type:** 64-bit operating system
+* **Monitor:** Standard display monitor
 
 ---
 
-# 📈 Benefits
+# 📌 Problems in the Existing System
 
-IMS provides a centralized solution that helps institutions:
+The analysis of the existing institutional system identified several limitations:
 
-* ✅ Reduce paperwork and manual data entry
-* ✅ Centralize academic and administrative information
-* ✅ Improve accessibility of institutional data
-* ✅ Reduce duplicated records
-* ✅ Improve user access control
-* ✅ Simplify attendance and fee management
-* ✅ Generate useful reports
-* ✅ Improve day-to-day institutional workflow
-* ✅ Provide a structured foundation for future expansion
+* Time-consuming manual processes
+* Difficulty maintaining and updating records
+* Lack of centralized data management
+* High chances of human errors
+* Data redundancy and inconsistency
+* Poor coordination between departments
 
----
-
-# 🔮 Future Enhancements
-
-The system can be extended with additional features such as:
-
-* 📱 Mobile application
-* 🔔 Push notifications
-* 📩 SMS notifications
-* 💳 Online fee payment
-* 📊 Advanced analytics dashboards
-* 📚 Examination and result management
-* 📝 Assignment management
-* 🚌 Transport management
-* 📖 Library management
-* 🏫 Multi-branch institution support
-* ☁️ Cloud deployment
-* 🔄 Automated database backups
+The existing system primarily relies on registers and basic digital tools such as spreadsheets, with many processes operating separately rather than through one integrated platform.
 
 ---
 
-# ⚠️ Important Notes
+# ✅ Advantages of the Proposed System
 
-> **Never commit sensitive credentials to the repository.**
+The proposed IMS addresses these problems by providing:
 
-Keep the following environment-specific:
-
-* Database passwords
-* Email credentials
-* JWT secrets
-* API keys
-* Production configuration
-
-Use separate configurations for:
-
-```text
-Development
-     ↓
-Staging
-     ↓
-Production
-```
+* Centralized institutional data
+* Role-based access control
+* Automated attendance management
+* Efficient timetable scheduling
+* Fee tracking and management
+* Quick data retrieval
+* Report generation
+* Improved accuracy
+* Reduced manual errors
+* Secure and user-friendly interaction
 
 ---
 
-# 🏁 Quick Start
+# 📈 Expected Benefits
 
-```text
-1. Clone Repository
-        ↓
-2. Import Database
-        ↓
-3. Configure app/Config/
-        ↓
-4. Start Apache + MySQL
-        ↓
-5. Set public/ as Web Root
-        ↓
-6. Open http://localhost/
-        ↓
-7. Login & Start Using IMS 🚀
-```
+The Institution Management System helps the institution to:
 
-## 📌 Project Summary
+### ⚡ Improve Efficiency
 
-**Institution Management System (IMS)** provides a centralized platform for managing the essential academic and administrative activities of an educational institution.
+Automates repetitive academic and administrative processes.
 
-By combining **student management, teacher management, attendance, fees, timetables, reporting, authentication, and role-based access control** into one application, IMS creates a more organized and efficient workflow for administrators, management, teachers, and students.
+### 🎯 Improve Accuracy
+
+Reduces errors caused by manual data entry and duplicated records.
+
+### 🗂️ Centralize Information
+
+Stores institutional information in a structured database.
+
+### 🔐 Improve Security
+
+Provides role-based access to different system functions.
+
+### 📊 Improve Decision-Making
+
+Makes organized institutional information easier to access and analyze.
+
+### 👥 Improve Coordination
+
+Provides a common platform for different departments and users.
+
+---
+
+# 🏁 Conclusion
+
+The **Institution Management System (IMS)** is a centralized web-based solution developed to improve the management of academic and administrative activities within an educational institution.
+
+The system integrates **student management, academic programs, semesters, subjects, teacher assignments, attendance, timetable scheduling, and fee management** into a single platform.
+
+By using **HTML, CSS, JavaScript, Bootstrap, PHP, and MySQL**, the system provides a structured and user-friendly environment for managing institutional information. Its role-based architecture allows **Principal, Vice Principal, Manager, Accountant, Teacher, and Student** users to access functionality according to their responsibilities.
+
+Overall, IMS addresses the limitations of manual and disconnected processes by providing **centralized data management, improved accuracy, reduced manual effort, better coordination, and secure access to institutional information**.

@@ -1,7 +1,4 @@
-Here is your **cleaned final document with ONLY the Data Flow section removed (everything else unchanged and polished formatting preserved):**
-
 ---
-
 # Institution Management System (IMS)
 
 ## Project Overview
